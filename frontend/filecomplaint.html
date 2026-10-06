@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>File a Complaint | AGAP</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+:root{
+    --blue:#1f6fd6;
+    --navy:#12285a;
+    --border:#d5deea;
+    --text-muted:#6b7587
+    }*{box-sizing:border-box}
+body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    font-family:"Poppins",Arial,sans-serif;color:var(--navy);background:#fff}
+a{text-decoration:none;
+    color:var(--blue)
+}
+    .complaint-container{
+        width:100%;
+        max-width:1440px;
+        margin:auto;
+        padding:0 40px}.complaint-header
+        {border-top:3px solid #f2c12e
+}
+    .complaint-header-inner{
+        min-height:78px;
+        display:flex;
+        align-items:center;
+    justify-content:space-between;
+    gap:24px
+}
+    .complaint-logo{
+    display:flex;
+    align-items:center;
+    gap:12px;font-weight:700;
+    font-size:26px
+}
+    .complaint-logo svg{
+        width:34px;
+        height:44px
+}
+    .complaint-nav{
+        display:flex;
+        align-items:center;
+        gap:28px;
+        font-size:14px
+    }
+    .complaint-nav a:first-child,.complaint-nav a:nth-child(2){color:#39465c}.account-icon{
+        display:grid;
+        place-items:center;
+        width:30px;
+        height:30px;
+        border-radius:50%;background:#f2c12e;
+        color:var(--navy);
+        font-size:16px
+}
+    .complaint-main{
+        flex:1;
+        padding-top:22px;
+        padding-bottom:24px
+}
+    .complaint-title{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:16px;border-bottom:1px solid var(--border);
+        padding-bottom:12px}
+    .complaint-title h1{
+        font-size:24px;
+        margin:0;
+        font-weight:700
+    }
+    .complaint-title a{
+        font-size:13px;
+        font-weight:600
+    }
+    .report-card{
+        max-width:760px;
+        margin:32px auto 0;
+        border:1px solid var(--border);border-radius:8px;
+        overflow:hidden
+    }
+    .report-heading{
+        background:#f4f6f9;
+        border-bottom:1px solid var(--border);
+        padding:12px 20px
+    }
+    .report-heading h2{
+        margin:0;
+        font-size:19px;
+        color:#273140
+    }
+    .report-content{padding:10px 24px 18px}
+    .reporting-as{
+    background:#eff5ff;
+    border:1px solid #c9dcf7;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    gap:14px;padding:10px 16px;
+    margin-bottom:14px
+    }
+    .report-avatar{
+        display:grid;
+        place-items:center;
+        flex-shrink:0;
+        background:var(--blue);
+        color:white;
+        width:42px;
+        height:42px;
+        border-radius:50%
+    }
+    .report-user{flex:1;min-width:0}
+    .report-user small{
+        display:block;
+        color:var(--text-muted);
+        font-size:12px
+    }
+    .report-user p{
+        margin:2px 0 0;
+        font-size:14px;
+        font-weight:600
+    }
+    .preview-badge{
+    font-size:11px;
+    background:#dff3e8;
+    color:#167345;
+    border-radius:20px;
+    padding:4px 10px;
+    white-space:nowrap
+    }
+    .field-heading{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:6px;
+    font-size:14px;
+    font-weight:600
+    }
+    .field-heading small{
+        font-weight:400;
+        color:var(--text-muted);
+        font-size:12px
+    }
+    .required{color:#d93025}.category-grid{
+        display:grid;
+        grid-template-columns:repeat(5,minmax(0,1fr));
+        gap:10px;margin-bottom:14px}
+    .category{position:relative}
+    .category input{
+    position:absolute;
+    opacity:0;width:1px;height:1px}
+    .category label{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        flex-direction:column;
+        gap:9px;
+        min-height:84px;
+        padding:10px 4px;
+        border:1px solid #bbc7da;
+        border-radius:9px;
+        cursor:pointer;
+        font-size:12px;font-weight:600;
+        text-align:center
+    }
+    .category input:checked+label{border-color:var(--blue);
+    background:#eff5ff;box-shadow:0 0 0 1px var(--blue)}
+    .category input:focus-visible+label{
+        outline:3px solid var(--blue);
+        outline-offset:3px}
+    .category-icon{
+        display:grid;
+        place-items:center;
+        width:30px;
+        height:30px;
+        border-radius:50%}
+    .category-icon svg{
+        width:19px;
+        height:19px;
+        fill:none;
+        stroke:currentColor;
+        stroke-width:1.8;
+        stroke-linecap:round;
+        stroke-linejoin:round
+        }
+    .garbage{
+        background:#dceaff;
+        color:#1a56b0
+        }
+    .noise{
+        background:#fff0cb;color:#996100}
+    .lighting{background:#dcf1e6;color:#167345}
+    .flooding{background:#def2ff;color:#1680bc}
+    .others{background:#f0e5ff;color:#7953b6}
+    .complaint-field{margin-bottom:13px}
+    .complaint-field label{
+        display:block;
+        font-size:14px;
+        font-weight:600;
+        margin-bottom:5px}
+    .complaint-field input,
+    .complaint-field textarea{
+        width:100%;
+        border:1px solid #bbc7da;
+        border-radius:8px;
+        padding:11px 16px;
+        font:inherit;
+        font-size:14px;
+        color:#273140;
+        background:white}
+        .complaint-field textarea{min-height:84px;resize:vertical}
+    .complaint-field input:focus,.complaint-field textarea:focus
+    {outline:2px solid var(--blue);outline-offset:2px}
+    .complaint-field ::placeholder{color:#8b96a8}
+    .photo-picker{
+        position:relative;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        min-height:40px;
+        padding:9px 26px;
+        border:2px dashed #d5deea;
+        background:#f8f9fb;
+        border-radius:7px;
+        font-size:13px;
+        color:var(--text-muted);
+        cursor:pointer
+        }
+    .photo-picker input{
+        position:absolute;
+        inset:0;
+        opacity:0;
+        width:100%;
+        height:100%;
+        cursor:pointer
+        }
+    .photo-picker:focus-within{
+        outline:2px solid var(--blue);
+        outline-offset:3px
+        }
+    .preview-note{
+        font-size:12px;
+        color:var(--text-muted);
+        margin:10px 0 14px
+        }
+    .report-actions{
+        display:flex;
+        gap:16px}
+        .submit-preview,
+        .cancel-button{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            border-radius:7px;
+            padding:11px 24px;
+            font:inherit;
+            font-size:14px;
+            font-weight:600;
+            min-height:44px}
+    .submit-preview{
+        border:1px solid var(--blue);
+        background:var(--blue);
+        color:#fff;min-width:228px;
+        cursor:not-allowed}
+    .cancel-button{
+        border:1px solid var(--blue);
+        background:white;
+        min-width:134px}
+    .complaint-footer{
+        background:#e8edf3;
+        color:#4d5968;
+        padding:18px 0;
+        font-size:12px}
+    .complaint-footer-inner{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:20px;
+        flex-wrap:wrap
+    }
+    .complaint-footer p{margin:0}.footer-help{color:var(--blue);white-space:nowrap}
+    a:focus-visible{outline:2px solid var(--blue);outline-offset:3px}@media(max-width:700px){
+    .complaint-container{padding:0 20px}.complaint-header-inner{flex-wrap:wrap;padding:12px 0;gap:12px}
+    .complaint-nav{gap:16px}.complaint-title h1{font-size:20px}.report-card{margin-top:24px}
+    .report-content{padding:12px 16px 18px}.category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .reporting-as{flex-wrap:wrap;padding:10px}.report-user p{font-size:13px}.report-actions{gap:10px}
+    .submit-preview{min-width:0;flex:1}.cancel-button{min-width:90px}.complaint-footer-inner{gap:10px}}
+</style>
+</head>
+<body>
+<header class="complaint-header">
+    <div class="complaint-container complaint-header-inner">
+<a class="complaint-logo" href="/dashboard" aria-label="AGAP home">
+    <svg viewBox="0 0 38 48" aria-hidden="true">
+        <path d="M5 42 19 13 33 42" fill="none" stroke="#1f6fd6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="19" cy="6" r="3" fill="#e52d29"/>
+        <circle cx="19" cy="34" r="3" fill="#f2c12e"/>
+    </svg>AGAP
+</a>
+<nav class="complaint-nav" aria-label="Main navigation">
+    <a href="/dashboard">Home</a>
+    <a href="/dashboard#recent-complaints">My Complaints</a>
+    <a class="account-icon" href="verify.html" aria-label="Account verification">●</a>
+    <a href="/signout">Sign out</a></nav>
+</div>
+</header>
+<main class="complaint-container complaint-main">
+<div class="complaint-title">
+    <h1>FILE A COMPLAINT</h1>
+    <a href="/dashboard">‹ Back to home</a>
+</div>
+<section class="report-card" aria-labelledby="report-title">
+<div class="report-heading"><h2 id="report-title">Report a problem</h2></div>
+<div class="report-content">
+<div class="reporting-as"><span class="report-avatar" aria-hidden="true">●</span>
+    <div class="report-user"><small>Reporting as</small>
+        <p>Your saved resident details</p>
+    </div>
+    <span class="preview-badge">Preview</span>
+</div>
+
+<div role="group" aria-labelledby="category-title">
+<div class="field-heading">
+    <span id="category-title">What is the problem? <span class="required">*</span>
+</span><small>Choose one</small>
+</div>
+<div class="category-grid">
+<div class="category">
+    <input type="radio" id="garbage" name="category" value="garbage">
+    <label for="garbage"><span class="category-icon garbage">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6h16M9 3h6M7 6l1 15h8l1-15M10 10v7M14 10v7"/>
+        </svg>
+    </span>Garbage</label>
+</div>
+<div class="category"><input type="radio" id="noise" name="category" value="noise"><label for="noise"><span class="category-icon noise"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM17 8c2 2 2 6 0 8"/></svg></span>Noise</label></div>
+<div class="category"><input type="radio" id="lighting" name="category" value="lighting"><label for="lighting"><span class="category-icon lighting"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M12 11v10M7 21h10"/></svg></span>Road and lighting</label></div>
+<div class="category"><input type="radio" id="flooding" name="category" value="flooding"><label for="flooding"><span class="category-icon flooding"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8c3-6 6 6 9 0s6 6 9 0M3 15c3-6 6 6 9 0s6 6 9 0"/></svg></span>Flooding</label></div>
+<div class="category"><input type="radio" id="others" name="category" value="others"><label for="others"><span class="category-icon others"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span>Others</label></div>
+</div></div>
+<div class="complaint-field"><label for="location">Where is it?</label><input id="location" type="text" placeholder="Enter the street, purok, or barangay"></div>
+<div class="complaint-field"><label for="description">Tell us what happened</label><textarea id="description" placeholder="Example: Garbage has not been collected for a week."></textarea></div>
+<label class="photo-picker" for="photo">+ Add a photo (optional)<input id="photo" type="file" accept="image/jpeg,image/png" aria-label="Add a photo (optional)" aria-describedby="preview-note"></label>
+<p class="preview-note" id="preview-note">Preview only. Your complaint and selected photo will not be submitted or saved.</p>
+<div class="report-actions"><button class="submit-preview" type="button" disabled aria-describedby="preview-note">Submit complaint</button><a class="cancel-button" href="/dashboard">Cancel</a></div>
+</div></section>
+</main>
+<footer class="complaint-footer"><div class="complaint-container complaint-footer-inner"><p>Barangay contact details will appear here.</p><span class="footer-help">Help | Privacy</span></div></footer>
+</body>
+</html>

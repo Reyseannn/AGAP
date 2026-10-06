@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard | AGAP</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .resident-status.resident-unverified { color: #996100; }
+    .resident-contact { white-space: normal; overflow-wrap: anywhere; }
+    .saved-details-bottom p { color: var(--text-muted); font-weight: 400; }
+    .empty-complaints { padding: 32px 20px; text-align: center; }
+    .empty-complaints h3 { font-size: 18px; }
+    .empty-complaints p { margin-top: 6px; font-size: 14px; color: var(--text-muted); }
+  </style>
+</head>
+<body class="dashboard-page">
+  <header class="navbar portal-header">
+    <div class="container navbar-inner">
+      <a class="logo portal-logo" href="/dashboard" aria-label="AGAP home">
+        <svg class="logo-mark" viewBox="0 0 38 48" aria-hidden="true"><path d="M5 42 19 13 33 42" fill="none" stroke="#1f6fd6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="19" cy="6" r="3" fill="#e52d29"/><circle cx="19" cy="34" r="3" fill="#f2c12e"/></svg>
+        <span class="logo-name">AGAP</span>
+      </a>
+      <nav class="dashboard-nav" aria-label="Main navigation">
+        <a class="nav-current" href="/dashboard" aria-current="page">Home</a>
+        <a href="#recent-complaints">My Complaints</a>
+        <a class="avatar nav-avatar" href="verify.html" aria-label="Account verification">&#9679;</a>
+        <a class="text-button sign-out" href="/signout">Sign out</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container dashboard-main">
+    <section class="welcome-banner" aria-labelledby="welcome-title">
+      <div class="welcome-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="welcome-copy">
+        <h1 id="welcome-title">Good day, {{firstname}}!</h1>
+        <p>How may we help you?</p>
+        <div class="welcome-actions">
+          <button class="btn btn-yellow" type="button" title="Static preview: complaint submission will be added later">File a complaint</button>
+          <a class="btn btn-white-outline" href="#recent-complaints">Track my complaints</a>
+        </div>
+      </div>
+      <section class="saved-details" aria-label="Saved resident details">
+        <div class="resident-heading">
+          <span class="avatar resident-avatar" aria-hidden="true">&#9679;</span>
+          <div><h2>{{firstname}}</h2><p class="resident-status resident-unverified">Not verified</p></div>
+        </div>
+        <p class="resident-contact">{{login}}</p>
+        <div class="saved-details-bottom"><p>Verify your residency</p><a class="text-button" href="verify.html">Verify account</a></div>
+      </section>
+    </section>
+
+    <div class="dashboard-columns">
+      <section class="dashboard-panel" id="recent-complaints" aria-labelledby="complaints-title">
+        <div class="panel-heading"><h2 id="complaints-title">My recent complaints</h2></div>
+        <div class="panel-content" id="complaint-list">
+          <div class="empty-complaints">
+            <h3>No complaints yet</h3>
+            <p>Your submitted complaints will appear here.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="dashboard-panel announcements-panel" id="announcements" aria-labelledby="announcements-title">
+        <div class="panel-heading"><h2 id="announcements-title">Announcements</h2><a href="#announcement-list">View all announcements</a></div>
+        <div class="panel-content" id="announcement-list">
+          <article class="announcement-row"><h3>Garbage collection moved to Saturday</h3><p>Posted <time datetime="2026-10-02">Oct 2, 2026</time></p></article>
+          <article class="announcement-row"><h3>Barangay assembly on October 10</h3><p>Posted <time datetime="2026-09-28">Sep 28, 2026</time></p></article>
+          <article class="announcement-row"><h3>Free vaccination drive this week</h3><p>Posted <time datetime="2026-09-25">Sep 25, 2026</time></p></article>
+          <article class="announcement-row"><h3>Clean-up drive this Sunday</h3><p>Posted <time datetime="2026-09-22">Sep 22, 2026</time></p></article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="portal-footer">
+    <div class="container portal-footer-inner"><p>Barangay Sample Hall <span aria-hidden="true">|</span> Hotline 0917 000 0000 <span aria-hidden="true">|</span> Mon to Fri, 8:00 AM to 5:00 PM</p><div class="footer-actions"><button class="text-button" type="button" title="Static preview: Help page is not included">Help</button><span aria-hidden="true">|</span><button class="text-button" type="button" title="Static preview: Privacy page is not included">Privacy</button></div></div>
+  </footer>
+</body>
+</html>

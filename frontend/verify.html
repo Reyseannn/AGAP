@@ -1,0 +1,72 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Account | AGAP</title>
+    <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body class="verify-page">
+    <header class="navbar portal-header">
+        <div class="container navbar-inner">
+        <a class="logo portal-logo" href="dashboard.html" aria-label="AGAP home">
+            <svg class="logo-mark" viewBox="0 0 38 48" aria-hidden="true">
+            <path d="M5 42 19 13 33 42" fill="none" stroke="#1f6fd6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="19" cy="6" r="3" fill="#e52d29"/><circle cx="19" cy="34" r="3" fill="#f2c12e"/></svg>
+            <span class="logo-name">AGAP</span>
+        </a>
+        <p class="portal-description">Community Complaint and Assistance Portal</p>
+        </div>
+    </header>
+
+    <main class="container verification-main">
+        <h1 class="verification-page-title">VERIFY AN ACCOUNT</h1>
+        <section class="verification-card" aria-labelledby="verification-title">
+        <div class="panel-heading">
+            <h2 id="verification-title">Verify you're a resident</h2>
+            <p class="verification-step">Step 2 of 2</p>
+        </div>
+        <div class="verification-card-content">
+            <p class="verification-intro">Upload a valid ID so staff can confirm you live in this barangay. You only do this once.</p>
+            <form class="verification-form">
+            <div class="field">
+                <label for="id-type">ID type</label>
+                <select id="id-type" name="id-type">
+                    <option selected>Barangay ID</option>
+                    <option>Philippine National ID</option>
+                    <option>Quezon City ID</option>
+                    <option>Other valid ID</option>
+                </select>
+            </div>
+            <div class="field upload-field">
+                <label for="id-photo">Photo of your ID</label>
+                <div class="id-upload">
+                <input id="id-photo" name="id-photo" type="file" accept="image/jpeg,image/png" aria-describedby="upload-instruction upload-help">
+                <span class="upload-plus" aria-hidden="true">+</span>
+                <span class="upload-instruction" id="upload-instruction">Tap to upload a clear photo of the front of your ID</span>
+                <span class="upload-help" id="upload-help">JPG or PNG, up to 5 MB. Your name and address must be readable.</span>
+                </div>
+            </div>
+            <button class="btn btn-blue btn-full verification-submit" type="button"
+            title="Static preview: verification submission is not connected yet"
+            aria-describedby="preview-note">Submit for verification</button>
+            <p class="sr-only" id="preview-note">
+                This is an HTML and CSS preview. Your ID is not uploaded and your verification status does not change.</p>
+            <a class="verification-later" href="dashboard.html">I'll do this later</a>
+            </form>
+        </div>
+        </section>
+    </main>
+
+    <footer class="portal-footer verification-footer">
+        <div class="container portal-footer-inner">
+            <div class="footer-actions">
+            <button class="text-button" type="button" title="Static preview: Help page is not included">Help</button>
+            <span aria-hidden="true">|</span>
+            <button class="text-button" type="button" title="Static preview: Privacy page is not included">Privacy
+            </button>
+        </div>
+    </div>
+</footer>
+    </body>
+    </html>

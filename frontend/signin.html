@@ -1,0 +1,48 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sign in – AGAP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    </head>
+    <body>
+    <main class="auth">
+
+    <section class="auth-side">
+        <a href="index.html" class="logo logo-white">
+        <span class="logo-name">AGAP</span>
+        <span class="logo-sub">Community Complaint System</span>
+        </a>
+        <h1>Report. Track. <span>Resolve.</span></h1>
+        <p>Sign in to file complaints, check their status, and follow your reports — all in one place.</p>
+    </section>
+
+    <section class="auth-main">
+        <form class="auth-card" method="post" action="/signin">
+        <h2>Sign in to AGAP</h2>
+        <p class="muted">Enter your resident credentials to continue.</p>
+
+        <div class="field">
+            <label for="login">Username or Email</label>
+            <input type="text" id="login" name="login" placeholder="juan@email.com" required>
+        </div>
+        <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="password-field" placeholder="Enter your password" required>
+        </div>
+        <div class="field-options">
+            <label><input type="checkbox" class="show-password"> Show password</label>
+        </div>
+
+        <button type="submit" class="btn btn-blue btn-full">Sign In</button>
+        <p class="auth-switch">New to AGAP? <a href="signup.html">Create an account</a></p>
+        </form>
+    </section>
+
+    </main>
+    <script src="js/auth.js"></script>
+    </body>
+    </html>
