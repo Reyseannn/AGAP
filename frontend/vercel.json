@@ -1,8 +1,30 @@
 {
+  "redirects": [
+    {
+      "source": "/dashboard.html",
+      "destination": "/dashboard",
+      "permanent": false
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/api/auth/signin",
+      "destination": "https://agap-backend-reysean.onrender.com/signin"
+    },
+    {
+      "source": "/api/auth/signup",
+      "destination": "https://agap-backend-reysean.onrender.com/signup"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "https://agap-backend-reysean.onrender.com/dashboard"
+    },
+    {
+      "source": "/signout",
+      "destination": "https://agap-backend-reysean.onrender.com/signout"
+    },
     { "source": "/signin", "destination": "/signin.html" },
     { "source": "/signup", "destination": "/signup.html" },
-    { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/verify", "destination": "/verify.html" },
     { "source": "/filecomplaint", "destination": "/filecomplaint.html" }
   ]
