@@ -1,11 +1,18 @@
 #include "storage.h"
 #include <fstream>
+#include <cstdlib>
 #include <sstream>
 #include <vector>
 using namespace std;
 
 
-static const string USERS_FILE = "../data/users.txt";
+static string usersFilePath() {
+    const char* configuredPath = getenv("AGAP_USERS_FILE");
+    if (configuredPath != nullptr && configuredPath[0] != '\0') {
+        return configuredPath;
+    }
+    return "../Data/users.txt";
+}
 
 
 static vector<string> splitByTab(const string& line) {
@@ -19,7 +26,7 @@ static vector<string> splitByTab(const string& line) {
 }
 
 bool findUser(const string& login, User& found) {
-    ifstream file(USERS_FILE);
+    ifstream file(usersFilePath());
     string line;
 
     while (getline(file, line)) {
@@ -42,7 +49,7 @@ bool findUser(const string& login, User& found) {
 }
 
 bool addUser(const User& user) {
-    ofstream file(USERS_FILE, ios::app);
+    ofstream file(usersFilePath(), ios::app);
     if (!file) return false;
 
     file << user.login << '\t' << user.fullName << '\t' << user.phone << '\t'
