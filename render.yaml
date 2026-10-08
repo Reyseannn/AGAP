@@ -5,4 +5,4 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    healthCheckPath: /signin
+    healthCheckPath: /signin.html
