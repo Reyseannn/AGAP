@@ -2,6 +2,7 @@
 #include "auth.h"
 #include "storage.h"
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -154,6 +155,12 @@ int main() {
         res.set_redirect("/");
     });
 
-    cout << "AGAP is running at http://localhost:8080" << endl;
-    server.listen("localhost", 8080);
+    int port = 8080;
+    const char* portValue = getenv("PORT");
+    if (portValue != nullptr) {
+        port = stoi(portValue);
+    }
+
+    cout << "AGAP server is running on port " << port << endl;
+    server.listen("0.0.0.0", port);
 }
