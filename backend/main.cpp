@@ -410,21 +410,21 @@ int main() {
             return;
         }
 
-        string phone = cleanField(req.get_param_value("phone"));
-        string address = cleanField(req.get_param_value("address"));
-        string idType = cleanField(req.get_param_value("id-type"));
+        string phone = cleanField(req.form.get_field("phone"));
+        string address = cleanField(req.form.get_field("address"));
+        string idType = cleanField(req.form.get_field("id-type"));
         if (phone.empty() || address.empty() || idType.empty()) {
             res.set_content(renderVerifyPage(user, "Enter your mobile number and address, then choose an ID type."), "text/html; charset=utf-8");
             res.status = 400;
             return;
         }
-        if (!req.has_file("id-photo")) {
+        if (!req.form.has_file("id-photo")) {
             res.set_content(renderVerifyPage(user, "Upload a photo of the front of your valid ID."), "text/html; charset=utf-8");
             res.status = 400;
             return;
         }
 
-        const auto& photo = req.get_file_value("id-photo");
+        const auto& photo = req.form.get_file("id-photo");
         string savedPhoto;
         if (!saveUpload(photo, "verification", "resident-id", savedPhoto)) {
             res.set_content(renderVerifyPage(user, "Use a JPG or PNG image up to 5 MB."), "text/html; charset=utf-8");
@@ -471,9 +471,9 @@ int main() {
             return;
         }
 
-        string category = cleanField(req.get_param_value("category"));
-        string location = cleanField(req.get_param_value("location"));
-        string details = cleanField(req.get_param_value("description"));
+        string category = cleanField(req.form.get_field("category"));
+        string location = cleanField(req.form.get_field("location"));
+        string details = cleanField(req.form.get_field("description"));
         const vector<string> categories = {"garbage", "noise", "lighting", "flooding", "others"};
         if (find(categories.begin(), categories.end(), category) == categories.end()
             || location.empty() || details.empty()) {
@@ -491,9 +491,9 @@ int main() {
         complaint.status = "Pending";
         complaint.createdAt = currentDate();
 
-        if (req.has_file("photo") && !req.get_file_value("photo").content.empty()) {
+        if (req.form.has_file("photo") && !req.form.get_file("photo").content.empty()) {
             string savedPhoto;
-            if (!saveUpload(req.get_file_value("photo"), "complaints", complaint.id, savedPhoto)) {
+            if (!saveUpload(req.form.get_file("photo"), "complaints", complaint.id, savedPhoto)) {
                 res.status = 400;
                 res.set_content(renderComplaintPage(user, "Use a JPG or PNG photo up to 5 MB, or remove the photo and submit without it."), "text/html; charset=utf-8");
                 return;
