@@ -1,5 +1,6 @@
 #include "storage.h"
 #include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -27,6 +28,14 @@ static string complaintsFilePath() {
         return configuredPath;
     }
     return getDataDirectory() + "/complaints.txt";
+}
+
+static bool ensureParentDirectory(const string& path) {
+    filesystem::path parent = filesystem::path(path).parent_path();
+    if (parent.empty()) return true;
+    error_code error;
+    filesystem::create_directories(parent, error);
+    return !error;
 }
 
 static vector<string> splitByTab(const string& line) {
@@ -76,6 +85,7 @@ bool findUser(const string& login, User& found) {
 }
 
 bool addUser(const User& user) {
+    if (!ensureParentDirectory(usersFilePath())) return false;
     ofstream file(usersFilePath(), ios::app);
     if (!file) return false;
     writeUser(file, user);
@@ -114,6 +124,7 @@ bool updateUser(const User& updatedUser) {
 }
 
 bool addComplaint(const Complaint& complaint) {
+    if (!ensureParentDirectory(complaintsFilePath())) return false;
     ofstream file(complaintsFilePath(), ios::app);
     if (!file) return false;
 
