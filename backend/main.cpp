@@ -67,6 +67,88 @@ static string loggedInUser(const httplib::Request& req) {
     return loginFromSession(getSessionToken(req));
 }
 
+static string getCookie(const httplib::Request& req, const string& name) {
+    string cookies = req.get_header_value("Cookie");
+    string key = name + "=";
+    size_t start = cookies.find(key);
+    if (start == string::npos) return "";
+    start += key.length();
+    size_t end = cookies.find(';', start);
+    if (end == string::npos) return cookies.substr(start);
+    return cookies.substr(start, end - start);
+}
+
+static string base64Encode(const string& input) {
+    static const string alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    string output;
+    int value = 0;
+    int bits = -6;
+    for (unsigned char c : input) {
+        value = (value << 8) + c;
+        bits += 8;
+        while (bits >= 0) {
+            output.push_back(alphabet[(value >> bits) & 0x3F]);
+            bits -= 6;
+        }
+    }
+    if (bits > -6) output.push_back(alphabet[((value << 8) >> (bits + 8)) & 0x3F]);
+    while (output.size() % 4) output.push_back('=');
+    return output;
+}
+
+static bool adminCredentialsSet() {
+    const char* username = getenv("AGAP_ADMIN_USER");
+    const char* password = getenv("AGAP_ADMIN_PASSWORD");
+    return username && username[0] && password && password[0];
+}
+
+static bool adminAuthorized(const httplib::Request& req) {
+    const char* username = getenv("AGAP_ADMIN_USER");
+    const char* password = getenv("AGAP_ADMIN_PASSWORD");
+    if (!username || !password || !username[0] || !password[0]) return false;
+    string expected = "Basic " + base64Encode(string(username) + ":" + password);
+    return req.get_header_value("Authorization") == expected;
+}
+
+static bool validAdminSession(const httplib::Request& req, string& token) {
+    token = getCookie(req, "agap_admin_session");
+    const char* username = getenv("AGAP_ADMIN_USER");
+    return username && loginFromSession(token) == string("admin:") + username;
+}
+
+static void requireAdmin(httplib::Response& res) {
+    res.status = 401;
+    res.set_header("WWW-Authenticate", "Basic realm=\"AGAP verification review\", charset=\"UTF-8\"");
+    res.set_content("Admin credentials are required.", "text/plain; charset=utf-8");
+}
+
+static string renderAdminPage(const string& csrfToken) {
+    string page = "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>AGAP ID review</title>"
+        "<style>body{font:15px Arial,sans-serif;color:#12285a;background:#f4f6f9;margin:0}main{max-width:900px;margin:32px auto;padding:0 20px}h1{font-size:24px}.card{background:#fff;border:1px solid #d5deea;border-radius:10px;padding:18px;margin:16px 0}.card img{display:block;max-width:100%;max-height:420px;object-fit:contain;margin:14px 0;border:1px solid #d5deea}.muted{color:#6b7587}.actions{display:flex;gap:10px}.actions button{padding:10px 16px;border:0;border-radius:6px;font-weight:700;cursor:pointer}.approve{background:#16824d;color:#fff}.reject{background:#b3261e;color:#fff}</style><main><h1>AGAP resident ID review</h1><p>Review the uploaded ID and resident details before approving the account.</p>";
+    vector<User> users = listUsers();
+    int count = 0;
+    for (const User& user : users) {
+        if (safeStatus(user) != "pending") continue;
+        ++count;
+        page += "<section class=\"card\"><h2>" + escapeHtml(user.fullName) + "</h2><p><strong>Mobile:</strong> "
+            + escapeHtml(user.phone) + "</p><p><strong>Address:</strong> " + escapeHtml(user.address)
+            + "</p><p><strong>ID type:</strong> " + escapeHtml(user.idType) + "</p>";
+        if (!user.idPhotoFile.empty()) {
+            page += "<img alt=\"Uploaded resident ID\" src=\"/admin/verification-photo?name="
+                + escapeHtml(user.idPhotoFile) + "\">";
+        } else {
+            page += "<p class=\"muted\">No ID photo is available.</p>";
+        }
+        page += "<form method=\"post\" action=\"/admin/verifications\"><input type=\"hidden\" name=\"login\" value=\""
+            + escapeHtml(user.login) + "\"><input type=\"hidden\" name=\"csrf\" value=\"" + escapeHtml(csrfToken)
+            + "\"><div class=\"actions\"><button class=\"approve\" name=\"decision\" value=\"verified\">Approve</button>"
+            "<button class=\"reject\" name=\"decision\" value=\"rejected\">Reject</button></div></form></section>";
+    }
+    if (count == 0) page += "<section class=\"card\"><p>No pending ID submissions.</p></section>";
+    page += "</main></html>";
+    return page;
+}
+
 static void showAuthPage(httplib::Response& res, const string& file, const string& error) {
     string page = readFile("../frontend/" + file);
     string banner;
@@ -404,6 +486,105 @@ int main() {
             return;
         }
         res.set_redirect("/dashboard");
+    });
+
+    server.Get("/admin/verifications", [](const httplib::Request& req, httplib::Response& res) {
+        if (!adminCredentialsSet()) {
+            res.status = 503;
+            res.set_content("Set AGAP_ADMIN_USER and AGAP_ADMIN_PASSWORD in the Render environment before using verification review.", "text/plain; charset=utf-8");
+            return;
+        }
+        if (!adminAuthorized(req)) {
+            requireAdmin(res);
+            return;
+        }
+
+        string oldToken = getCookie(req, "agap_admin_session");
+        if (!oldToken.empty()) deleteSession(oldToken);
+        const char* username = getenv("AGAP_ADMIN_USER");
+        string token = createSession(string("admin:") + username);
+        res.set_header("Set-Cookie", "agap_admin_session=" + token + "; Path=/admin; HttpOnly; SameSite=Strict; Secure");
+        res.set_header("Cache-Control", "no-store");
+        res.set_content(renderAdminPage(token), "text/html; charset=utf-8");
+    });
+
+    server.Get("/admin/verification-photo", [](const httplib::Request& req, httplib::Response& res) {
+        if (!adminAuthorized(req)) {
+            requireAdmin(res);
+            return;
+        }
+        string token;
+        if (!validAdminSession(req, token)) {
+            res.status = 403;
+            res.set_content("Open the verification review page first.", "text/plain; charset=utf-8");
+            return;
+        }
+
+        string fileName = req.get_param_value("name");
+        if (fileName.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.") != string::npos
+            || fileName.find("..") != string::npos) {
+            res.status = 400;
+            return;
+        }
+
+        bool belongsToResident = false;
+        for (const User& user : listUsers()) {
+            if (user.idPhotoFile == fileName) {
+                belongsToResident = true;
+                break;
+            }
+        }
+        if (!belongsToResident) {
+            res.status = 404;
+            return;
+        }
+
+        ifstream input(fs::path(getDataDirectory()) / "verification" / fileName, ios::binary);
+        if (!input) {
+            res.status = 404;
+            return;
+        }
+        string image((istreambuf_iterator<char>(input)), istreambuf_iterator<char>());
+        string contentType = fileName.size() >= 4 && fileName.substr(fileName.size() - 4) == ".png"
+            ? "image/png" : "image/jpeg";
+        res.set_header("Cache-Control", "no-store");
+        res.set_content(image, contentType);
+    });
+
+    server.Post("/admin/verifications", [](const httplib::Request& req, httplib::Response& res) {
+        if (!adminCredentialsSet()) {
+            res.status = 503;
+            res.set_content("Admin review is not configured.", "text/plain; charset=utf-8");
+            return;
+        }
+        if (!adminAuthorized(req)) {
+            requireAdmin(res);
+            return;
+        }
+
+        string token;
+        if (!validAdminSession(req, token) || req.get_param_value("csrf") != token) {
+            res.status = 403;
+            res.set_content("The review form expired. Reload the page and try again.", "text/plain; charset=utf-8");
+            return;
+        }
+
+        string login = toLower(cleanField(req.get_param_value("login")));
+        string decision = req.get_param_value("decision");
+        User user;
+        if (!findUser(login, user) || safeStatus(user) != "pending"
+            || (decision != "verified" && decision != "rejected")) {
+            res.status = 400;
+            res.set_content("This verification request cannot be updated.", "text/plain; charset=utf-8");
+            return;
+        }
+        user.verification = decision;
+        if (!updateUser(user)) {
+            res.status = 500;
+            res.set_content("Could not save the review decision.", "text/plain; charset=utf-8");
+            return;
+        }
+        res.set_redirect("/admin/verifications");
     });
 
     server.Get("/signout", [](const httplib::Request& req, httplib::Response& res) {
