@@ -307,7 +307,7 @@ a{text-decoration:none;
 <nav class="complaint-nav" aria-label="Main navigation">
     <a href="/dashboard">Home</a>
     <a href="/dashboard#recent-complaints">My Complaints</a>
-    <a class="account-icon" href="verify.html" aria-label="Account verification">●</a>
+    <a class="account-icon" href="/verify" aria-label="Account verification">●</a>
     <a href="/signout">Sign out</a></nav>
 </div>
 </header>
@@ -319,11 +319,13 @@ a{text-decoration:none;
 <section class="report-card" aria-labelledby="report-title">
 <div class="report-heading"><h2 id="report-title">Report a problem</h2></div>
 <div class="report-content">
+{{complaint_error}}
+<form id="complaint-form" action="/complaints" method="post" enctype="multipart/form-data">
 <div class="reporting-as"><span class="report-avatar" aria-hidden="true">●</span>
     <div class="report-user"><small>Reporting as</small>
-        <p>Your saved resident details</p>
+        <p>{{fullname}} · {{phone}} · {{address}}</p>
     </div>
-    <span class="preview-badge">Preview</span>
+    <span class="preview-badge">Verified resident</span>
 </div>
 
 <div role="group" aria-labelledby="category-title">
@@ -333,7 +335,7 @@ a{text-decoration:none;
 </div>
 <div class="category-grid">
 <div class="category">
-    <input type="radio" id="garbage" name="category" value="garbage">
+    <input type="radio" id="garbage" name="category" value="garbage" required>
     <label for="garbage"><span class="category-icon garbage">
         <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 6h16M9 3h6M7 6l1 15h8l1-15M10 10v7M14 10v7"/>
@@ -345,13 +347,21 @@ a{text-decoration:none;
 <div class="category"><input type="radio" id="flooding" name="category" value="flooding"><label for="flooding"><span class="category-icon flooding"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8c3-6 6 6 9 0s6 6 9 0M3 15c3-6 6 6 9 0s6 6 9 0"/></svg></span>Flooding</label></div>
 <div class="category"><input type="radio" id="others" name="category" value="others"><label for="others"><span class="category-icon others"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></span>Others</label></div>
 </div></div>
-<div class="complaint-field"><label for="location">Where is it?</label><input id="location" type="text" placeholder="Enter the street, purok, or barangay"></div>
-<div class="complaint-field"><label for="description">Tell us what happened</label><textarea id="description" placeholder="Example: Garbage has not been collected for a week."></textarea></div>
-<label class="photo-picker" for="photo">+ Add a photo (optional)<input id="photo" type="file" accept="image/jpeg,image/png" aria-label="Add a photo (optional)" aria-describedby="preview-note"></label>
-<p class="preview-note" id="preview-note">Preview only. Your complaint and selected photo will not be submitted or saved.</p>
-<div class="report-actions"><button class="submit-preview" type="button" disabled aria-describedby="preview-note">Submit complaint</button><a class="cancel-button" href="/dashboard">Cancel</a></div>
+<div class="complaint-field"><label for="location">Where is it?</label><input id="location" name="location" type="text" placeholder="Enter the street, purok, or barangay" required></div>
+<div class="complaint-field"><label for="description">Tell us what happened</label><textarea id="description" name="description" placeholder="Example: Garbage has not been collected for a week." required></textarea></div>
+<label class="photo-picker" for="photo">+ Add a photo (optional)<input id="photo" name="photo" type="file" accept="image/jpeg,image/png" aria-label="Add a photo (optional)" aria-describedby="preview-note"></label>
+<p class="preview-note" id="preview-note">Optional JPG or PNG, up to 5 MB. Avoid including sensitive personal information.</p>
+<div class="report-actions"><button class="submit-preview" type="submit" aria-describedby="preview-note">Submit complaint</button><a class="cancel-button" href="/dashboard">Cancel</a></div>
+</form>
 </div></section>
 </main>
 <footer class="complaint-footer"><div class="complaint-container complaint-footer-inner"><p>Barangay contact details will appear here.</p><span class="footer-help">Help | Privacy</span></div></footer>
+<script>
+const complaintPhoto = document.getElementById("photo");
+complaintPhoto.addEventListener("change", function () {
+  const note = document.getElementById("preview-note");
+  note.textContent = complaintPhoto.files.length ? complaintPhoto.files[0].name + " selected. JPG or PNG, up to 5 MB." : "Optional JPG or PNG, up to 5 MB. Avoid including sensitive personal information.";
+});
+</script>
 </body>
 </html>
