@@ -67,6 +67,8 @@ static string loggedInUser(const httplib::Request& req) {
     return loginFromSession(getSessionToken(req));
 }
 
+static string safeStatus(const User& user);
+
 static string getCookie(const httplib::Request& req, const string& name) {
     string cookies = req.get_header_value("Cookie");
     string key = name + "=";
