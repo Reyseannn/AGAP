@@ -9,7 +9,7 @@
     <body class="verify-page">
     <header class="navbar portal-header">
         <div class="container navbar-inner">
-        <a class="logo portal-logo" href="dashboard.html" aria-label="AGAP home">
+        <a class="logo portal-logo" href="/dashboard" aria-label="AGAP home">
             <svg class="logo-mark" viewBox="0 0 38 48" aria-hidden="true">
             <path d="M5 42 19 13 33 42" fill="none" stroke="#1f6fd6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
             <circle cx="19" cy="6" r="3" fill="#e52d29"/><circle cx="19" cy="34" r="3" fill="#f2c12e"/></svg>
@@ -27,32 +27,37 @@
             <p class="verification-step">Step 2 of 2</p>
         </div>
         <div class="verification-card-content">
+            {{verification_notice}}
             <p class="verification-intro">Upload a valid ID so staff can confirm you live in this barangay. You only do this once.</p>
-            <form class="verification-form">
+            <form class="verification-form" method="post" action="/verify" enctype="multipart/form-data">
+            <div class="field">
+                <label for="phone">Mobile number</label>
+                <input id="phone" name="phone" type="tel" value="{{phone}}" placeholder="09XX XXX XXXX" autocomplete="tel" required>
+            </div>
+            <div class="field">
+                <label for="address">Complete address</label>
+                <input id="address" name="address" type="text" value="{{address}}" placeholder="House no., street, purok, barangay" autocomplete="street-address" required>
+            </div>
             <div class="field">
                 <label for="id-type">ID type</label>
-                <select id="id-type" name="id-type">
-                    <option selected>Barangay ID</option>
-                    <option>Philippine National ID</option>
-                    <option>Quezon City ID</option>
-                    <option>Other valid ID</option>
+                <select id="id-type" name="id-type" required>
+                    <option value="Barangay ID">Barangay ID</option>
+                    <option value="Philippine National ID">Philippine National ID</option>
+                    <option value="Quezon City ID">Quezon City ID</option>
+                    <option value="Other valid ID">Other valid ID</option>
                 </select>
             </div>
             <div class="field upload-field">
                 <label for="id-photo">Photo of your ID</label>
                 <div class="id-upload">
-                <input id="id-photo" name="id-photo" type="file" accept="image/jpeg,image/png" aria-describedby="upload-instruction upload-help">
+                <input id="id-photo" name="id-photo" type="file" accept="image/jpeg,image/png" required aria-describedby="upload-instruction upload-help">
                 <span class="upload-plus" aria-hidden="true">+</span>
                 <span class="upload-instruction" id="upload-instruction">Tap to upload a clear photo of the front of your ID</span>
                 <span class="upload-help" id="upload-help">JPG or PNG, up to 5 MB. Your name and address must be readable.</span>
                 </div>
             </div>
-            <button class="btn btn-blue btn-full verification-submit" type="button"
-            title="Static preview: verification submission is not connected yet"
-            aria-describedby="preview-note">Submit for verification</button>
-            <p class="sr-only" id="preview-note">
-                This is an HTML and CSS preview. Your ID is not uploaded and your verification status does not change.</p>
-            <a class="verification-later" href="dashboard.html">I'll do this later</a>
+            <button class="btn btn-blue btn-full verification-submit" type="submit">Submit for verification</button>
+            <a class="verification-later" href="/dashboard">I'll do this later</a>
             </form>
         </div>
         </section>
@@ -68,5 +73,12 @@
         </div>
     </div>
 </footer>
+    <script>
+    const idPhoto = document.getElementById("id-photo");
+    idPhoto.addEventListener("change", function () {
+      const instruction = document.getElementById("upload-instruction");
+      instruction.textContent = idPhoto.files.length ? idPhoto.files[0].name : "Tap to upload a clear photo of the front of your ID";
+    });
+    </script>
     </body>
     </html>

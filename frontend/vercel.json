@@ -23,9 +23,33 @@
       "source": "/signout",
       "destination": "https://agap-backend-reysean.onrender.com/signout"
     },
-    { "source": "/signin", "destination": "/signin.html" },
-    { "source": "/signup", "destination": "/signup.html" },
-    { "source": "/verify", "destination": "/verify.html" },
-    { "source": "/filecomplaint", "destination": "/filecomplaint.html" }
+    {
+      "source": "/signin",
+      "destination": "/signin.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/signup.html"
+    },
+    {
+      "source": "/verify",
+      "destination": "https://agap-backend-reysean.onrender.com/verify"
+    },
+    {
+      "source": "/filecomplaint",
+      "destination": "https://agap-backend-reysean.onrender.com/filecomplaint"
+    },
+    {
+      "source": "/complaints",
+      "destination": "https://agap-backend-reysean.onrender.com/complaints"
+    },
+    {
+      "source": "/admin/verifications",
+      "destination": "https://agap-backend-reysean.onrender.com/admin/verifications"
+    },
+    {
+      "source": "/admin/verification-photo",
+      "destination": "https://agap-backend-reysean.onrender.com/admin/verification-photo"
+    }
   ]
 }

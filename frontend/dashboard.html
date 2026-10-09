@@ -24,30 +24,31 @@
       <nav class="dashboard-nav" aria-label="Main navigation">
         <a class="nav-current" href="/dashboard" aria-current="page">Home</a>
         <a href="#recent-complaints">My Complaints</a>
-        <a class="avatar nav-avatar" href="verify.html" aria-label="Account verification">&#9679;</a>
+        <a class="avatar nav-avatar" href="/verify" aria-label="Account verification">&#9679;</a>
         <a class="text-button sign-out" href="/signout">Sign out</a>
       </nav>
     </div>
   </header>
 
   <main class="container dashboard-main">
+    {{verification_notice}}
     <section class="welcome-banner" aria-labelledby="welcome-title">
       <div class="welcome-decoration" aria-hidden="true"><span></span><span></span><span></span></div>
       <div class="welcome-copy">
         <h1 id="welcome-title">Good day, {{firstname}}!</h1>
         <p>How may we help you?</p>
         <div class="welcome-actions">
-          <button class="btn btn-yellow" type="button" title="Static preview: complaint submission will be added later">File a complaint</button>
+          {{complaint_action}}
           <a class="btn btn-white-outline" href="#recent-complaints">Track my complaints</a>
         </div>
       </div>
       <section class="saved-details" aria-label="Saved resident details">
         <div class="resident-heading">
           <span class="avatar resident-avatar" aria-hidden="true">&#9679;</span>
-          <div><h2>{{firstname}}</h2><p class="resident-status resident-unverified">Not verified</p></div>
+          <div><h2>{{firstname}}</h2><p class="resident-status resident-{{verification_state}}">{{verification_label}}</p></div>
         </div>
-        <p class="resident-contact">{{login}}</p>
-        <div class="saved-details-bottom"><p>Verify your residency</p><a class="text-button" href="verify.html">Verify account</a></div>
+        <p class="resident-contact">{{phone}}<br>{{address}}</p>
+        <div class="saved-details-bottom"><p>Saved details fill in your reports</p><a class="text-button" href="/verify">Edit</a></div>
       </section>
     </section>
 
@@ -55,10 +56,7 @@
       <section class="dashboard-panel" id="recent-complaints" aria-labelledby="complaints-title">
         <div class="panel-heading"><h2 id="complaints-title">My recent complaints</h2></div>
         <div class="panel-content" id="complaint-list">
-          <div class="empty-complaints">
-            <h3>No complaints yet</h3>
-            <p>Your submitted complaints will appear here.</p>
-          </div>
+          {{complaints}}
         </div>
       </section>
 
