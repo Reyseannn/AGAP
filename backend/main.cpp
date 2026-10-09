@@ -287,6 +287,19 @@ static bool saveUpload(const httplib::MultipartFormData& file, const string& fol
     if (!validImageType(file, extension) || file.content.size() > 5 * 1024 * 1024) {
         return false;
     }
+    bool validSignature = false;
+    if (extension == ".jpg" && file.content.size() >= 3) {
+        validSignature = static_cast<unsigned char>(file.content[0]) == 0xFF
+            && static_cast<unsigned char>(file.content[1]) == 0xD8
+            && static_cast<unsigned char>(file.content[2]) == 0xFF;
+    } else if (extension == ".png" && file.content.size() >= 8) {
+        const unsigned char signature[8] = {0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A};
+        validSignature = true;
+        for (size_t i = 0; i < 8; ++i) {
+            if (static_cast<unsigned char>(file.content[i]) != signature[i]) validSignature = false;
+        }
+    }
+    if (!validSignature) return false;
 
     fs::path directory = fs::path(getDataDirectory()) / folder;
     error_code error;
@@ -297,14 +310,20 @@ static bool saveUpload(const httplib::MultipartFormData& file, const string& fol
     ofstream output(directory / savedName, ios::binary);
     if (!output) return false;
     output.write(file.content.data(), static_cast<streamsize>(file.content.size()));
-    return output.good();
+    output.close();
+    if (!output) return false;
+    error_code permissionError;
+    fs::permissions(directory / savedName, fs::perms::owner_read | fs::perms::owner_write,
+        fs::perm_options::replace, permissionError);
+    return !permissionError;
 }
 
 static string currentDate() {
     time_t now = time(nullptr);
-    tm* local = localtime(&now);
+    tm localTime{};
+    localtime_r(&now, &localTime);
     char buffer[16];
-    strftime(buffer, sizeof(buffer), "%Y-%m-%d", local);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d", &localTime);
     return buffer;
 }
 
