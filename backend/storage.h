@@ -32,6 +32,7 @@ string getDataDirectory();
 bool findUser(const string& login, User& found);
 bool addUser(const User& user);
 bool updateUser(const User& user);
+vector<User> listUsers();
 bool addComplaint(const Complaint& complaint);
 vector<Complaint> findComplaintsByUser(const string& login);
 
