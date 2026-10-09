@@ -269,7 +269,7 @@ static string renderComplaintPage(User& user, const string& error) {
     return page;
 }
 
-static bool validImageType(const httplib::MultipartFormData& file, string& extension) {
+static bool validImageType(const httplib::FormData& file, string& extension) {
     if (file.content_type == "image/jpeg" || file.content_type == "image/jpg") {
         extension = ".jpg";
         return true;
@@ -281,7 +281,7 @@ static bool validImageType(const httplib::MultipartFormData& file, string& exten
     return false;
 }
 
-static bool saveUpload(const httplib::MultipartFormData& file, const string& folder,
+static bool saveUpload(const httplib::FormData& file, const string& folder,
                        const string& prefix, string& savedName) {
     string extension;
     if (!validImageType(file, extension) || file.content.size() > 5 * 1024 * 1024) {
