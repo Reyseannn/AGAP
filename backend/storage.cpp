@@ -146,3 +146,21 @@ vector<Complaint> findComplaintsByUser(const string& login) {
     }
     return complaints;
 }
+
+
+vector<User> listUsers() {
+    vector<User> users;
+    ifstream file(usersFilePath());
+    string line;
+
+    while (getline(file, line)) {
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        vector<string> fields = splitByTab(line);
+        if (fields.size() < 7) continue;
+
+        User user;
+        assignUserFields(fields, user);
+        users.push_back(user);
+    }
+    return users;
+}
