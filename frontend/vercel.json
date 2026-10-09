@@ -42,6 +42,14 @@
     {
       "source": "/complaints",
       "destination": "https://agap-backend-reysean.onrender.com/complaints"
+    },
+    {
+      "source": "/admin/verifications",
+      "destination": "https://agap-backend-reysean.onrender.com/admin/verifications"
+    },
+    {
+      "source": "/admin/verification-photo",
+      "destination": "https://agap-backend-reysean.onrender.com/admin/verification-photo"
     }
   ]
 }
