@@ -144,6 +144,7 @@ static string renderDashboard(User& user) {
     page = replaceAll(page, "{{phone}}", escapeHtml(user.phone.empty() ? "Phone not provided" : user.phone));
     page = replaceAll(page, "{{address}}", escapeHtml(user.address.empty() ? "Address not provided" : user.address));
     page = replaceAll(page, "{{verification_label}}", verificationLabel(status));
+    page = replaceAll(page, "{{verification_state}}", status);
     page = replaceAll(page, "{{verification_notice}}", dashboardNotice(status));
     page = replaceAll(page, "{{complaint_action}}", complaintButton(status));
     page = replaceAll(page, "{{complaints}}", renderComplaints(user.login));
