@@ -1,8 +1,0 @@
-services:
-  - type: web
-    name: agap-backend
-    runtime: docker
-    plan: free
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    healthCheckPath: /signin.html

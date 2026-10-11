@@ -1,12 +1,4 @@
-const form = document.querySelector(".auth-card");
-
-if (form && window.location.hostname.endsWith(".vercel.app")) {
-  const backendPath = new URL(form.action).pathname;
-  form.action = backendPath === "/signup"
-    ? "/api/auth/signup"
-    : "/api/auth/signin";
-}
-
+// "Show password" checkbox: switches every password box in the form between hidden and visible.
 const toggle = document.querySelector(".show-password");
 
 if (toggle) {

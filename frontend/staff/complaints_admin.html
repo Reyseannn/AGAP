@@ -61,26 +61,20 @@
             <p class="muted">All complaints from residents</p>
         </div>
         <div class="admin-topbar-actions">
-            <a href="#" class="btn btn-outline">Export</a>
-            <a href="#" class="btn btn-yellow">Pending Review</a>
+            <a href="/admin/complaints/export.csv" class="btn btn-outline">Export</a>
+            <a href="/admin/complaints?status=pending" class="btn btn-yellow">Pending Review</a>
         </div>
         </header>
 
         <main class="admin-content">
-        <!-- SAMPLE DATA: these 7 rows come from the Figma. Complaint storage hasn't
-            been built yet (residents can't file a complaint for real either), so
-            search/filtering below works on this sample set using JavaScript only.
-            Once complaints are saved to a data file, this table should instead be
-            built server-side in C++, the same way the dashboard's resident count
-            is, and the filters would become query parameters like
-            /admin/complaints?status=pending instead of client-side JS. -->
         <div class="admin-panel">
             <div class="complaints-toolbar">
             <div class="status-tabs" id="statusTabs">
-                <button type="button" class="tab active" data-status="all">All (7)</button>
-                <button type="button" class="tab" data-status="pending">Pending (4)</button>
-                <button type="button" class="tab" data-status="progress">In progress (2)</button>
-                <button type="button" class="tab" data-status="resolved">Resolved (1)</button>
+                <button type="button" class="tab active" data-status="all">All ({{allCount}})</button>
+                <button type="button" class="tab" data-status="pending">Pending ({{pendingCount}})</button>
+                <button type="button" class="tab" data-status="progress">In progress ({{progressCount}})</button>
+                <button type="button" class="tab" data-status="resolved">Resolved ({{resolvedCount}})</button>
+                <button type="button" class="tab" data-status="rejected">Rejected ({{rejectedCount}})</button>
             </div>
             <div class="toolbar-filters">
                 <input type="text" id="searchBox" placeholder="Search ID or resident name">
@@ -100,45 +94,11 @@
                 <tr><th>ID</th><th>Complaint</th><th>Category</th><th>Resident</th><th>Filed on</th><th>Status</th><th></th></tr>
             </thead>
             <tbody id="complaintsBody">
-                <tr data-status="pending" data-category="Others">
-                <td>AGAP-0007</td><td>Stray dogs near the chapel</td><td>Others</td><td>Pedro Santos</td><td>Oct 3, 2026</td>
-                <td><span class="badge badge-pending">Pending</span></td>
-                <td><a href="/admin/complaints/AGAP-0007">View &rsaquo;</a></td>
-                </tr>
-                <tr data-status="pending" data-category="Road and lighting">
-                <td>AGAP-0006</td><td>Pothole on Rizal Street</td><td>Road and lighting</td><td>Ana Reyes</td><td>Oct 3, 2026</td>
-                <td><span class="badge badge-pending">Pending</span></td>
-                <td><a href="/admin/complaints/AGAP-0006">View &rsaquo;</a></td>
-                </tr>
-                <tr data-status="pending" data-category="Garbage">
-                <td>AGAP-0005</td><td>Garbage not collected for a week</td><td>Garbage</td><td>Juan Dela Cruz</td><td>Oct 3, 2026</td>
-                <td><span class="badge badge-pending">Pending</span></td>
-                <td><a href="/admin/complaints/AGAP-0005">View &rsaquo;</a></td>
-                </tr>
-                <tr data-status="pending" data-category="Noise">
-                <td>AGAP-0004</td><td>Loud karaoke at night</td><td>Noise</td><td>Juan Dela Cruz</td><td>Oct 3, 2026</td>
-                <td><span class="badge badge-pending">Pending</span></td>
-                <td><a href="/admin/complaints/AGAP-0004">View &rsaquo;</a></td>
-                </tr>
-                <tr data-status="progress" data-category="Garbage">
-                <td>AGAP-0003</td><td>Uncollected garbage on Purok 3</td><td>Garbage</td><td>Juan Dela Cruz</td><td>Oct 2, 2026</td>
-                <td><span class="badge badge-progress">In progress</span></td>
-                <td><a href="/admin/complaints/AGAP-0003">View &rsaquo;</a></td>
-                </tr>
-                <tr data-status="progress" data-category="Road and lighting">
-                <td>AGAP-0002</td><td>Broken streetlight near the school</td><td>Road and lighting</td><td>Juan Dela Cruz</td><td>Sep 30, 2026</td>
-                <td><span class="badge badge-progress">In progress</span></td>
-                <td><a href="/admin/complaints/AGAP-0002">View &rsaquo;</a></td>
-                </tr>
-                <tr data-status="resolved" data-category="Flooding">
-                <td>AGAP-0001</td><td>Flooding on Mabini Street</td><td>Flooding</td><td>Juan Dela Cruz</td><td>Sep 27, 2026</td>
-                <td><span class="badge badge-resolved">Resolved</span></td>
-                <td><a href="/admin/complaints/AGAP-0001">View &rsaquo;</a></td>
-                </tr>
+                {{complaintRows}}
             </tbody>
             </table>
 
-            <p class="table-note" id="resultCount">Showing 7 of 7 complaints</p>
+            <p class="table-note" id="resultCount">Showing {{allCount}} of {{allCount}} complaints</p>
         </div>
         </main>
     </div>

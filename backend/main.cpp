@@ -2,12 +2,10 @@
 #include "auth.h"
 #include "storage.h"
 #include "staff_storage.h"
-#include "sample_complaints.h"
 #include "pdf_report.h"
 #include "announcement_storage.h"
 #include "complaint_storage.h"
 #include <algorithm>
-#include <cstdlib>
 #include <cstdio>
 #include <ctime>
 #include <filesystem>
@@ -224,6 +222,67 @@ static void showComplaintPage(httplib::Response& res, const User& user, const st
     page = replaceAll(page, "{{errorBanner}}", banner);
     page = replaceAll(page, "{{fullname}}", escapeHtml(user.fullName));
     page = replaceAll(page, "{{phone}}", escapeHtml(user.phone));
+    res.set_content(page, "text/html");
+}
+
+// A complaint has no title of its own, so the pages show "Category - location".
+static string complaintTitle(const Complaint& c) {
+    return c.category + " - " + c.location;
+}
+
+// The short word complaints_admin.html's tabs use in data-status="...".
+static string statusKeyFor(const string& status) {
+    if (status == "In progress") return "progress";
+    if (status == "Resolved") return "resolved";
+    if (status == "Rejected") return "rejected";
+    return "pending";
+}
+
+// Only these four words are allowed as a complaint status.
+static bool isValidStatus(const string& status) {
+    return status == "Pending" || status == "In progress" || status == "Resolved" || status == "Rejected";
+}
+
+// Quotes one cell for the CSV export. A cell starting with = + - or @ would be run as a
+// formula by Excel, so a ' is put in front of it (text a resident typed must never do that).
+static string csvCell(string text) {
+    if (!text.empty() && (text[0] == '=' || text[0] == '+' || text[0] == '-' || text[0] == '@')) {
+        text = "'" + text;
+    }
+    text = replaceAll(text, "\"", "\"\"");
+    return "\"" + text + "\"";
+}
+
+// Checks that the request comes from an active staff member. Fills "staff" and returns
+// true if so; otherwise sends them to the sign-in page and returns false.
+static bool requireStaff(const httplib::Request& req, httplib::Response& res, Staff& staff) {
+    string login = loginFromSession(getAdminSessionToken(req));
+    if (login.empty() || !findStaff(login, staff) || staff.status != "active") {
+        res.set_redirect("/signin.html");
+        return false;
+    }
+    return true;
+}
+
+// The red "N" bubble next to Residents in the admin sidebar.
+static string residentsNavBadge() {
+    VerificationCounts counts = countResidentsByVerification();
+    return (counts.pending > 0) ? "<span class=\"nav-count\">" + to_string(counts.pending) + "</span>" : "";
+}
+
+// Fills in the parts every admin page has (staff name, sidebar badge).
+static string fillAdminShell(string page, const Staff& staff) {
+    page = replaceAll(page, "{{staffName}}", escapeHtml(staff.fullName));
+    page = replaceAll(page, "{{staffInitials}}", escapeHtml(initialsOf(staff.fullName)));
+    page = replaceAll(page, "{{residentsNavBadge}}", residentsNavBadge());
+    return page;
+}
+
+// Shows one of the "not built yet" admin pages (Reports, Settings) so their sidebar links work.
+static void showComingSoon(httplib::Response& res, const Staff& staff, const string& title, const string& note) {
+    string page = fillAdminShell(readFile("../frontend/staff/coming_soon_admin.html"), staff);
+    page = replaceAll(page, "{{pageTitle}}", title);
+    page = replaceAll(page, "{{pageNote}}", note);
     res.set_content(page, "text/html");
 }
 
@@ -460,6 +519,54 @@ int main() {
         res.set_redirect("/dashboard");
     });
 
+    // MY COMPLAINTS: every complaint the logged-in resident filed.
+    server.Get("/my-complaints", [](const httplib::Request& req, httplib::Response& res) {
+        string login = loginFromSession(getSessionToken(req));
+        User user;
+        if (login.empty() || !findUser(login, user)) {
+            res.set_redirect("/signin.html");
+            return;
+        }
+        string rows = "";
+        for (const Complaint& c : listComplaintsFor(user.login)) {
+            rows += "<div class=\"complaint\"><div><strong>" + escapeHtml(complaintTitle(c)) + "</strong><p>" +
+                    escapeHtml(c.id) + " | " + escapeHtml(c.filedDate) + "</p><p>" + escapeHtml(c.description) +
+                    "</p></div><span class=\"badge " + statusBadgeClassFor(c.status) + "\">" + escapeHtml(c.status) + "</span></div>";
+        }
+        if (rows.empty()) rows = "<p class=\"muted\">You have not filed any complaints yet.</p>";
+
+        string page = readFile("../frontend/resident_list.html");
+        page = replaceAll(page, "{{initials}}", escapeHtml(initialsOf(user.fullName)));
+        page = replaceAll(page, "{{pageTitle}}", "My complaints");
+        page = replaceAll(page, "{{pageIntro}}", "Everything you have reported, newest first.");
+        page = replaceAll(page, "{{listRows}}", rows);
+        res.set_content(page, "text/html");
+    });
+
+    // ANNOUNCEMENTS: the full list (the dashboard only shows the newest 4).
+    server.Get("/announcements", [](const httplib::Request& req, httplib::Response& res) {
+        string login = loginFromSession(getSessionToken(req));
+        User user;
+        if (login.empty() || !findUser(login, user)) {
+            res.set_redirect("/signin.html");
+            return;
+        }
+        string rows = "";
+        for (const Announcement& a : listAnnouncements()) {
+            rows += "<div class=\"card\" style=\"margin-bottom:10px\"><h4>" + escapeHtml(a.title) + "</h4><p>" +
+                    escapeHtml(a.category) + " | Posted " + escapeHtml(a.postedDate) + "</p><p style=\"color:inherit\">" +
+                    escapeHtml(a.message) + "</p></div>";
+        }
+        if (rows.empty()) rows = "<p class=\"muted\">No announcements yet.</p>";
+
+        string page = readFile("../frontend/resident_list.html");
+        page = replaceAll(page, "{{initials}}", escapeHtml(initialsOf(user.fullName)));
+        page = replaceAll(page, "{{pageTitle}}", "Announcements");
+        page = replaceAll(page, "{{pageIntro}}", "News from the barangay, newest first.");
+        page = replaceAll(page, "{{listRows}}", rows);
+        res.set_content(page, "text/html");
+    });
+
     // FILE A COMPLAINT: only residents whose ID was approved (verified) can file.
     // The page has no ".html" in its URL for the same reason /verify doesn't (README, section 7).
     server.Get("/file-complaint", [](const httplib::Request& req, httplib::Response& res) {
@@ -608,9 +715,8 @@ int main() {
             return;
         }
 
-        // The only genuinely live numbers on this dashboard right now: real counts
-        // read straight from data/users.txt. Complaint counts are still sample data,
-        // since complaints aren't saved to a file yet (see the HTML comment there).
+        // Everything here is real: resident counts from data/users.txt, complaint
+        // numbers from data/complaints.txt.
         VerificationCounts counts = countResidentsByVerification();
 
         string notice = "";
@@ -624,113 +730,231 @@ int main() {
             navBadge = "<span class=\"nav-count\">" + to_string(counts.pending) + "</span>";
         }
 
-        string page = readFile("../frontend/staff/dashboard_admin.html");
-        page = replaceAll(page, "{{staffName}}", escapeHtml(staff.fullName));
-        page = replaceAll(page, "{{staffInitials}}", escapeHtml(initialsOf(staff.fullName)));
+        // Real complaint numbers, counted from data/complaints.txt.
+        vector<Complaint> allComplaints = listAllComplaints();
+        int pendingComplaints = 0, progressComplaints = 0, resolvedComplaints = 0;
+        const char* categories[] = {"Garbage", "Noise", "Road and lighting", "Flooding", "Others"};
+        int categoryCounts[5] = {0, 0, 0, 0, 0};
+        string recentRows = "";
+        for (size_t i = 0; i < allComplaints.size(); i++) {
+            const Complaint& c = allComplaints[i];
+            if (c.status == "In progress") progressComplaints++;
+            else if (c.status == "Resolved") resolvedComplaints++;
+            else if (c.status != "Rejected") pendingComplaints++;
+            for (int k = 0; k < 5; k++) {
+                if (c.category == categories[k]) categoryCounts[k]++;
+            }
+            if (i < 5) {
+                User resident;
+                string residentName = findUser(c.login, resident) ? resident.fullName : c.login;
+                recentRows += "<tr><td>" + escapeHtml(residentName) + "</td><td>" + escapeHtml(c.category) + "</td><td>" +
+                              escapeHtml(c.filedDate) + "</td><td><span class=\"badge " + statusBadgeClassFor(c.status) + "\">" +
+                              escapeHtml(c.status) + "</span></td></tr>";
+            }
+        }
+        if (recentRows.empty()) {
+            recentRows = "<tr><td colspan=\"4\" class=\"muted\">No complaints have been filed yet.</td></tr>";
+        }
+        string categoryBars = "";
+        for (int k = 0; k < 5; k++) {
+            int percent = allComplaints.empty() ? 0 : (categoryCounts[k] * 100) / (int)allComplaints.size();
+            categoryBars += "<div class=\"cat-bar-row\"><span class=\"cat-label\">" + string(categories[k]) +
+                            "</span><div class=\"cat-bar-track\"><div class=\"cat-bar-fill\" style=\"width:" + to_string(percent) +
+                            "%\"></div></div><span class=\"cat-num\">" + to_string(categoryCounts[k]) + "</span></div>";
+        }
+
+        string page = fillAdminShell(readFile("../frontend/staff/dashboard_admin.html"), staff);
+        page = replaceAll(page, "{{totalComplaints}}", to_string(allComplaints.size()));
+        page = replaceAll(page, "{{pendingComplaints}}", to_string(pendingComplaints));
+        page = replaceAll(page, "{{pendingComplaintsPlural}}", pendingComplaints == 1 ? "" : "s");
+        page = replaceAll(page, "{{progressComplaints}}", to_string(progressComplaints));
+        page = replaceAll(page, "{{resolvedComplaints}}", to_string(resolvedComplaints));
+        page = replaceAll(page, "{{recentRows}}", recentRows);
+        page = replaceAll(page, "{{categoryBars}}", categoryBars);
+        page = replaceAll(page, "{{verifiedCount}}", to_string(counts.verified));
+        page = replaceAll(page, "{{verifiedPlural}}", counts.verified == 1 ? "" : "s");
         page = replaceAll(page, "{{todayDate}}", todayFormatted());
         page = replaceAll(page, "{{pendingCount}}", to_string(counts.pending));
         page = replaceAll(page, "{{pendingPlural}}", counts.pending == 1 ? "" : "s");
         page = replaceAll(page, "{{verificationNotice}}", notice);
-        page = replaceAll(page, "{{residentsNavBadge}}", navBadge);
         res.set_content(page, "text/html");
     });
 
-    // COMPLAINTS LIST (sample data for now — see the comment in complaints_admin.html).
+    // COMPLAINTS LIST: real complaints from data/complaints.txt, newest first.
+    // The tabs/search/category filter on this page run in the browser (complaints.js).
     server.Get("/admin/complaints", [](const httplib::Request& req, httplib::Response& res) {
-        string login = loginFromSession(getAdminSessionToken(req));
         Staff staff;
-        if (login.empty() || !findStaff(login, staff) || staff.status != "active") {
-            res.set_redirect("/signin.html");
-            return;
+        if (!requireStaff(req, res, staff)) return;
+
+        int pending = 0, progress = 0, resolved = 0, rejected = 0;
+        string rows = "";
+        vector<Complaint> all = listAllComplaints();
+        for (const Complaint& c : all) {
+            if (c.status == "In progress") progress++;
+            else if (c.status == "Resolved") resolved++;
+            else if (c.status == "Rejected") rejected++;
+            else pending++;
+
+            User resident;
+            string residentName = findUser(c.login, resident) ? resident.fullName : c.login;
+            rows += "<tr data-status=\"" + statusKeyFor(c.status) + "\" data-category=\"" + escapeHtml(c.category) + "\">"
+                    "<td>" + escapeHtml(c.id) + "</td><td>" + escapeHtml(complaintTitle(c)) + "</td>"
+                    "<td>" + escapeHtml(c.category) + "</td><td>" + escapeHtml(residentName) + "</td>"
+                    "<td>" + escapeHtml(c.filedDate) + "</td>"
+                    "<td><span class=\"badge " + statusBadgeClassFor(c.status) + "\">" + escapeHtml(c.status) + "</span></td>"
+                    "<td><a href=\"/admin/complaints/" + escapeHtml(c.id) + "\">View &rsaquo;</a></td></tr>";
+        }
+        if (rows.empty()) {
+            rows = "<tr><td colspan=\"7\" class=\"muted\">No complaints have been filed yet.</td></tr>";
         }
 
-        VerificationCounts counts = countResidentsByVerification();
-        string navBadge = (counts.pending > 0)
-            ? "<span class=\"nav-count\">" + to_string(counts.pending) + "</span>"
-            : "";
-
-        string page = readFile("../frontend/staff/complaints_admin.html");
-        page = replaceAll(page, "{{staffName}}", escapeHtml(staff.fullName));
-        page = replaceAll(page, "{{staffInitials}}", escapeHtml(initialsOf(staff.fullName)));
-        page = replaceAll(page, "{{residentsNavBadge}}", navBadge);
+        string page = fillAdminShell(readFile("../frontend/staff/complaints_admin.html"), staff);
+        page = replaceAll(page, "{{allCount}}", to_string(all.size()));
+        page = replaceAll(page, "{{pendingCount}}", to_string(pending));
+        page = replaceAll(page, "{{progressCount}}", to_string(progress));
+        page = replaceAll(page, "{{resolvedCount}}", to_string(resolved));
+        page = replaceAll(page, "{{rejectedCount}}", to_string(rejected));
+        page = replaceAll(page, "{{complaintRows}}", rows);
         res.set_content(page, "text/html");
     });
 
-    // COMPLAINT DETAILS page (sample data for now — see sample_complaints.cpp).
-    // "([A-Za-z0-9\-]+)" matches one path segment like "AGAP-0005" (no slash in
-    // it), so this never matches the PDF route below, which has an extra "/" in it.
-    server.Get(R"(/admin/complaints/([A-Za-z0-9\-]+))", [](const httplib::Request& req, httplib::Response& res) {
-        string login = loginFromSession(getAdminSessionToken(req));
+    // EXPORT: every complaint as a CSV file that opens in Excel. (The ".csv" in the URL means
+    // the details route below, which only allows letters/digits/dashes, never matches it.)
+    server.Get("/admin/complaints/export.csv", [](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
-        if (login.empty() || !findStaff(login, staff) || staff.status != "active") {
-            res.set_redirect("/signin.html");
-            return;
-        }
+        if (!requireStaff(req, res, staff)) return;
 
-        string id = req.matches[1];
-        SampleComplaint complaint;
-        if (!findSampleComplaint(id, complaint)) {
+        string csv = "ID,Category,Location,Description,Status,Filed on,Resident,Email,Phone,Address\n";
+        for (const Complaint& c : listAllComplaints()) {
+            User resident;
+            bool known = findUser(c.login, resident);
+            csv += csvCell(c.id) + "," + csvCell(c.category) + "," + csvCell(c.location) + "," +
+                   csvCell(c.description) + "," + csvCell(c.status) + "," + csvCell(c.filedDate) + "," +
+                   csvCell(known ? resident.fullName : c.login) + "," + csvCell(c.login) + "," +
+                   csvCell(known ? resident.phone : "") + "," + csvCell(known ? resident.address : "") + "\n";
+        }
+        res.set_header("Content-Disposition", "attachment; filename=\"agap-complaints.csv\"");
+        res.set_content(csv, "text/csv");
+    });
+
+    // COMPLAINT DETAILS page. "([A-Za-z0-9\-]+)" matches one path segment like "AGAP-0005"
+    // (no slash in it), so this never matches the PDF/photo/status routes below.
+    server.Get(R"(/admin/complaints/([A-Za-z0-9\-]+))", [](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireStaff(req, res, staff)) return;
+
+        Complaint complaint;
+        if (!findComplaint(req.matches[1], complaint)) {
             res.status = 404;
             res.set_content("<h1>Complaint not found</h1><p><a href=\"/admin/complaints\">Back to complaints</a></p>", "text/html");
             return;
         }
 
-        VerificationCounts counts = countResidentsByVerification();
-        string navBadge = (counts.pending > 0)
-            ? "<span class=\"nav-count\">" + to_string(counts.pending) + "</span>"
-            : "";
+        User resident;
+        bool known = findUser(complaint.login, resident);
 
-        string page = readFile("../frontend/staff/complaint_details_admin.html");
-        page = replaceAll(page, "{{staffName}}", escapeHtml(staff.fullName));
-        page = replaceAll(page, "{{staffInitials}}", escapeHtml(initialsOf(staff.fullName)));
-        page = replaceAll(page, "{{residentsNavBadge}}", navBadge);
+        string statusOptions = "";
+        for (string word : {"Pending", "In progress", "Resolved", "Rejected"}) {
+            statusOptions += "<option" + string(word == complaint.status ? " selected" : "") + ">" + word + "</option>";
+        }
+
+        string photoBlock = complaint.photoFile.empty()
+            ? "<p class=\"muted\">No photo was attached.</p>"
+            : "<img src=\"/admin/complaints/" + escapeHtml(complaint.id) + "/photo\" alt=\"Photo from the resident\" "
+              "class=\"complaint-photo\" style=\"margin-top:10px\">";
+
+        string page = fillAdminShell(readFile("../frontend/staff/complaint_details_admin.html"), staff);
         page = replaceAll(page, "{{id}}", escapeHtml(complaint.id));
-        page = replaceAll(page, "{{title}}", escapeHtml(complaint.title));
+        page = replaceAll(page, "{{title}}", escapeHtml(complaintTitle(complaint)));
         page = replaceAll(page, "{{category}}", escapeHtml(complaint.category));
         page = replaceAll(page, "{{status}}", escapeHtml(complaint.status));
         page = replaceAll(page, "{{statusBadgeClass}}", statusBadgeClassFor(complaint.status));
+        page = replaceAll(page, "{{statusOptions}}", statusOptions);
         page = replaceAll(page, "{{filedDate}}", escapeHtml(complaint.filedDate));
-        page = replaceAll(page, "{{residentName}}", escapeHtml(complaint.residentName));
-        page = replaceAll(page, "{{residentEmail}}", escapeHtml(complaint.residentEmail));
-        page = replaceAll(page, "{{residentPhone}}", escapeHtml(complaint.residentPhone));
-        page = replaceAll(page, "{{residentAddress}}", escapeHtml(complaint.residentAddress));
+        page = replaceAll(page, "{{residentName}}", escapeHtml(known ? resident.fullName : complaint.login));
+        page = replaceAll(page, "{{residentEmail}}", escapeHtml(complaint.login));
+        page = replaceAll(page, "{{residentPhone}}", escapeHtml(known && !resident.phone.empty() ? resident.phone : "Not added"));
+        page = replaceAll(page, "{{residentAddress}}", escapeHtml(known && !resident.address.empty() ? resident.address : "Not added"));
         page = replaceAll(page, "{{location}}", escapeHtml(complaint.location));
         page = replaceAll(page, "{{description}}", escapeHtml(complaint.description));
+        page = replaceAll(page, "{{photoBlock}}", photoBlock);
         res.set_content(page, "text/html");
+    });
+
+    // CHANGE A COMPLAINT'S STATUS (staff only).
+    server.Post(R"(/admin/complaints/([A-Za-z0-9\-]+)/status)", [](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireStaff(req, res, staff)) return;
+
+        string id = req.matches[1];
+        string status = cleanField(req.get_param_value("status"));
+        if (!isValidStatus(status) || !updateComplaintStatus(id, status)) {
+            res.status = 400;
+            res.set_content("Could not change that complaint's status.", "text/plain");
+            return;
+        }
+        res.set_redirect("/admin/complaints/" + id);
+    });
+
+    // COMPLAINT PHOTO: the picture the resident attached (staff only).
+    server.Get(R"(/admin/complaints/([A-Za-z0-9\-]+)/photo)", [](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireStaff(req, res, staff)) return;
+
+        Complaint complaint;
+        if (!findComplaint(req.matches[1], complaint) || complaint.photoFile.empty()) {
+            res.status = 404;
+            res.set_content("No photo.", "text/plain");
+            return;
+        }
+        // photoFile was made by this server (ID + .jpg/.png), but is cleaned again to be safe.
+        string path = "../data/complaint_photos/" + safeFileName(complaint.photoFile);
+        ifstream file(path, ios::binary);
+        if (!file) {
+            res.status = 404;
+            res.set_content("No photo.", "text/plain");
+            return;
+        }
+        stringstream bytes;
+        bytes << file.rdbuf();
+        bool isPng = complaint.photoFile.size() > 4 && complaint.photoFile.substr(complaint.photoFile.size() - 4) == ".png";
+        res.set_content(bytes.str(), isPng ? "image/png" : "image/jpeg");
     });
 
     // COMPLAINT PDF REPORT: builds the PDF on the spot and sends it straight back.
     // "inline" lets the browser preview it in a tab; the browser's own save
     // button still downloads it, so one link covers both "view" and "download".
     server.Get(R"(/admin/complaints/([A-Za-z0-9\-]+)/report\.pdf)", [](const httplib::Request& req, httplib::Response& res) {
-        string login = loginFromSession(getAdminSessionToken(req));
         Staff staff;
-        if (login.empty() || !findStaff(login, staff) || staff.status != "active") {
-            res.set_redirect("/signin.html");
-            return;
-        }
+        if (!requireStaff(req, res, staff)) return;
 
         string id = req.matches[1];
-        SampleComplaint complaint;
-        if (!findSampleComplaint(id, complaint)) {
+        Complaint complaint;
+        if (!findComplaint(id, complaint)) {
             res.status = 404;
             res.set_content("Complaint not found.", "text/plain");
             return;
         }
+        User resident;
+        bool known = findUser(complaint.login, resident);
 
         ComplaintReportData reportData;
         reportData.id = complaint.id;
-        reportData.title = complaint.title;
+        reportData.title = complaintTitle(complaint);
         reportData.category = complaint.category;
         reportData.status = complaint.status;
         reportData.filedDate = complaint.filedDate;
-        reportData.residentName = complaint.residentName;
-        reportData.residentEmail = complaint.residentEmail;
-        reportData.residentPhone = complaint.residentPhone;
-        reportData.residentAddress = complaint.residentAddress;
+        reportData.residentName = known ? resident.fullName : complaint.login;
+        reportData.residentEmail = complaint.login;
+        reportData.residentPhone = known ? resident.phone : "";
+        reportData.residentAddress = known ? resident.address : "";
         reportData.location = complaint.location;
         reportData.description = complaint.description;
-        reportData.photoPath = "../frontend/assets/sample_complaint_photo.jpg";
+        // The PDF writer can only embed JPEG photos, so a PNG is left out of the report.
+        if (!complaint.photoFile.empty() && complaint.photoFile.size() > 4 &&
+            complaint.photoFile.substr(complaint.photoFile.size() - 4) == ".jpg") {
+            reportData.photoPath = "../data/complaint_photos/" + safeFileName(complaint.photoFile);
+        }
 
         filesystem::create_directories("../data/reports");
         string pdfPath = "../data/reports/" + safeFileName(id) + ".pdf";
@@ -746,6 +970,19 @@ int main() {
         pdfBytes << pdfFile.rdbuf();
         res.set_header("Content-Disposition", "inline; filename=\"" + id + "-report.pdf\"");
         res.set_content(pdfBytes.str(), "application/pdf");
+    });
+
+    // REPORTS and SETTINGS: not built yet (README, section 10). These keep the sidebar links
+    // from ending on a "not found" page.
+    server.Get("/admin/reports", [](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireStaff(req, res, staff)) return;
+        showComingSoon(res, staff, "Reports", "Complaint reports with date and category filters are planned for a later step.");
+    });
+    server.Get("/admin/settings", [](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireStaff(req, res, staff)) return;
+        showComingSoon(res, staff, "Settings", "Staff account management and barangay settings are planned for a later step.");
     });
 
     // RESIDENTS LIST — real data, read straight from data/users.txt. Accounts
@@ -1024,12 +1261,6 @@ int main() {
         res.set_redirect("/");
     });
 
-    int port = 8080;
-    const char* portValue = getenv("PORT");
-    if (portValue != nullptr) {
-        port = stoi(portValue);
-    }
-
-    cout << "AGAP server is running on port " << port << endl;
-    server.listen("0.0.0.0", port);
+    cout << "AGAP is running at http://localhost:8080" << endl;
+    server.listen("localhost", 8080);
 }

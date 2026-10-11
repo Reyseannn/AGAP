@@ -1,19 +1,13 @@
 #include "storage.h"
 #include <fstream>
-#include <cstdlib>
 #include <functional>
 #include <sstream>
 #include <vector>
 using namespace std;
 
 
-static string usersFilePath() {
-    const char* configuredPath = getenv("AGAP_USERS_FILE");
-    if (configuredPath != nullptr && configuredPath[0] != '\0') {
-        return configuredPath;
-    }
-    return "../data/users.txt";
-}
+// The file is found relative to the backend folder, the same way "../frontend" is.
+static const string USERS_FILE = "../data/users.txt";
 
 // The columns, in order, that each line of users.txt holds.
 static const size_t FIELD_COUNT = 9;  // login, fullName, phone, address, salt,
@@ -58,7 +52,7 @@ static string userToLine(const User& user) {
 }
 
 bool findUser(const string& login, User& found) {
-    ifstream file(usersFilePath());
+    ifstream file(USERS_FILE);
     string line;
 
     while (getline(file, line)) {
@@ -76,7 +70,7 @@ bool findUser(const string& login, User& found) {
 
 vector<User> listAllUsers() {
     vector<User> users;
-    ifstream file(usersFilePath());
+    ifstream file(USERS_FILE);
     string line;
 
     while (getline(file, line)) {
@@ -89,7 +83,7 @@ vector<User> listAllUsers() {
 }
 
 bool addUser(const User& user) {
-    ofstream file(usersFilePath(), ios::app);
+    ofstream file(USERS_FILE, ios::app);
     if (!file) return false;
 
     file << userToLine(user) << '\n';
@@ -101,7 +95,7 @@ bool addUser(const User& user) {
 // the whole file. A text file can't edit a single line in place, so every
 // update means reading it all and writing it all back.
 static bool updateOneUser(const string& login, const std::function<void(User&)>& change) {
-    ifstream in(usersFilePath());
+    ifstream in(USERS_FILE);
     if (!in) return false;
 
     vector<string> lines;
@@ -125,7 +119,7 @@ static bool updateOneUser(const string& login, const std::function<void(User&)>&
     in.close();
     if (!found) return false;
 
-    ofstream out(usersFilePath(), ios::trunc);  // trunc = replace the whole file
+    ofstream out(USERS_FILE, ios::trunc);  // trunc = replace the whole file
     if (!out) return false;
     for (const string& l : lines) out << l << '\n';
     return true;

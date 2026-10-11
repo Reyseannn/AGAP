@@ -26,4 +26,14 @@ bool addComplaint(const Complaint& complaint);
 // Every complaint filed by one resident, newest first. Used on the resident dashboard.
 vector<Complaint> listComplaintsFor(const string& login);
 
+// Every complaint from every resident, newest first. Used by the admin pages.
+vector<Complaint> listAllComplaints();
+
+// Looks for one complaint by ID. Returns true and fills "found" if it exists.
+bool findComplaint(const string& id, Complaint& found);
+
+// Changes one complaint's status (Pending, In progress, Resolved or Rejected).
+// Rewrites the whole file, since a text file can't edit one line in place.
+bool updateComplaintStatus(const string& id, const string& newStatus);
+
 #endif

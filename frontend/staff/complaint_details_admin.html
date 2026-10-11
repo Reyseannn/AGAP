@@ -58,7 +58,7 @@
         <header class="admin-topbar">
         <div>
             <a href="/admin/complaints" class="back-link">&lsaquo; Back to complaints</a>
-            <h1>{{title}} <span class="sample-tag">(sample data)</span></h1>
+            <h1>{{title}}</h1>
             <p class="muted">{{id}} &middot; Filed {{filedDate}} <span class="badge {{statusBadgeClass}}">{{status}}</span></p>
         </div>
         <div class="admin-topbar-actions">
@@ -67,8 +67,6 @@
         </header>
 
         <main class="admin-content">
-        <!-- SAMPLE DATA: filled from sample_complaints.cpp. Once complaints are read from
-             data/complaints.txt, this page should be filled from there instead. -->
         <div class="admin-grid">
             <section>
             <div class="admin-panel">
@@ -76,7 +74,7 @@
                 <p class="muted">Category<br><strong>{{category}}</strong></p>
                 <p class="muted">Location<br>{{location}}</p>
                 <p class="muted">Description<br>{{description}}</p>
-                <img src="/assets/sample_complaint_photo.jpg" alt="Sample complaint photo" class="complaint-photo" style="margin-top:10px">
+                {{photoBlock}}
             </div>
             </section>
 
@@ -87,6 +85,17 @@
                 <p class="muted">Email<br>{{residentEmail}}</p>
                 <p class="muted">Mobile number<br>{{residentPhone}}</p>
                 <p class="muted">Home address<br>{{residentAddress}}</p>
+            </div>
+
+            <div class="admin-panel">
+                <h3>Update status</h3>
+                <form method="post" action="/admin/complaints/{{id}}/status">
+                <div class="field">
+                    <label for="status">Status</label>
+                    <select id="status" name="status">{{statusOptions}}</select>
+                </div>
+                <button type="submit" class="btn btn-blue btn-full">Save status</button>
+                </form>
             </div>
             </aside>
         </div>

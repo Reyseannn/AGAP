@@ -2,6 +2,7 @@
 backend/*.exe
 backend/agap
 
-# Runtime data (resident accounts, ID photos, complaints, generated PDFs)
+# Runtime data: resident accounts, staff accounts, ID photos, complaints,
+# complaint photos, announcements and generated PDF reports
 data/
 Data/

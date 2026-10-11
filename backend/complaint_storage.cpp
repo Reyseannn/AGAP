@@ -67,3 +67,39 @@ vector<Complaint> listComplaintsFor(const string& login) {
     }
     return mine;
 }
+
+vector<Complaint> listAllComplaints() {
+    vector<Complaint> all = readAll();
+    vector<Complaint> newestFirst(all.rbegin(), all.rend());
+    return newestFirst;
+}
+
+bool findComplaint(const string& id, Complaint& found) {
+    for (const Complaint& c : readAll()) {
+        if (c.id == id) {
+            found = c;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool updateComplaintStatus(const string& id, const string& newStatus) {
+    vector<Complaint> all = readAll();
+    bool changed = false;
+    for (Complaint& c : all) {
+        if (c.id == id) {
+            c.status = newStatus;
+            changed = true;
+        }
+    }
+    if (!changed) return false;
+
+    ofstream out(COMPLAINTS_FILE, ios::trunc);  // trunc = replace the whole file
+    if (!out) return false;
+    for (const Complaint& c : all) {
+        out << c.id << '\t' << c.login << '\t' << c.category << '\t' << c.location << '\t'
+            << c.description << '\t' << c.status << '\t' << c.filedDate << '\t' << c.photoFile << "\n";
+    }
+    return true;
+}

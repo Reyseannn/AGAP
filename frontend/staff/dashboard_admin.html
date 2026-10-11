@@ -61,7 +61,7 @@
             <p class="muted">Barangay Sample | Today, {{todayDate}}</p>
         </div>
         <div class="admin-topbar-actions">
-            <a href="#" class="btn btn-outline">Export</a>
+            <a href="/admin/complaints/export.csv" class="btn btn-outline">Export</a>
             <a href="/admin/complaints?status=pending" class="btn btn-yellow">Pending Review</a>
         </div>
         </header>
@@ -70,30 +70,26 @@
 
         {{verificationNotice}}
 
-        <!-- SAMPLE DATA: these 4 numbers come from the Figma, not from real complaints,
-            because complaint storage hasn't been built yet (Step 3/4). Once complaints
-            are saved to a data file, this section should count them the same way
-            countResidentsByVerification() counts residents in storage.cpp. -->
         <div class="summary-cards">
             <div class="summary-card">
-            <div class="num">7</div>
+            <div class="num">{{totalComplaints}}</div>
             <div class="label">Total complaints</div>
-            <div class="delta">&uarr; 3 this week</div>
+            <div class="delta">All time</div>
             </div>
             <div class="summary-card">
-            <div class="num">4</div>
+            <div class="num">{{pendingComplaints}}</div>
             <div class="label">Pending</div>
-            <div class="delta warn">4 need review today</div>
+            <div class="delta warn">Waiting for review</div>
             </div>
             <div class="summary-card">
-            <div class="num">2</div>
+            <div class="num">{{progressComplaints}}</div>
             <div class="label">In progress</div>
             <div class="delta">Being handled</div>
             </div>
             <div class="summary-card">
-            <div class="num">1</div>
+            <div class="num">{{resolvedComplaints}}</div>
             <div class="label">Resolved</div>
-            <div class="delta">Completed this month</div>
+            <div class="delta">Completed</div>
             </div>
         </div>
 
@@ -101,17 +97,13 @@
             <section>
             <div class="admin-panel">
                 <div class="admin-panel-head">
-                <h3>Recent complaints <span class="sample-tag">(sample data)</span></h3>
+                <h3>Recent complaints</h3>
                 <a href="/admin/complaints">View all</a>
                 </div>
                 <table class="admin-table">
                 <thead><tr><th>Resident</th><th>Category</th><th>Submitted</th><th>Status</th></tr></thead>
                 <tbody>
-                    <tr><td>Pedro Santos</td><td>Others</td><td>Oct 3, 2026</td><td><span class="badge badge-pending">Pending</span></td></tr>
-                    <tr><td>Ana Reyes</td><td>Road and lighting</td><td>Oct 3, 2026</td><td><span class="badge badge-pending">Pending</span></td></tr>
-                    <tr><td>Juan Dela Cruz</td><td>Garbage</td><td>Oct 3, 2026</td><td><span class="badge badge-pending">Pending</span></td></tr>
-                    <tr><td>Juan Dela Cruz</td><td>Noise</td><td>Oct 3, 2026</td><td><span class="badge badge-pending">Pending</span></td></tr>
-                    <tr><td>Juan Dela Cruz</td><td>Garbage</td><td>Oct 2, 2026</td><td><span class="badge badge-progress">In progress</span></td></tr>
+                    {{recentRows}}
                 </tbody>
                 </table>
             </div>
@@ -125,22 +117,18 @@
                 <strong>{{pendingCount}} resident{{pendingPlural}}</strong>
                 </div>
                 <div class="attention-item">
-                <span>New residents this week <span class="sample-tag">(sample)</span></span>
-                <strong>5 residents</strong>
+                <span>Verified residents</span>
+                <strong>{{verifiedCount}} resident{{verifiedPlural}}</strong>
                 </div>
                 <div class="attention-item">
-                <span>Unassigned complaints <span class="sample-tag">(sample)</span></span>
-                <strong>4 complaints</strong>
+                <span>Complaints waiting for review</span>
+                <strong>{{pendingComplaints}} complaint{{pendingComplaintsPlural}}</strong>
                 </div>
             </div>
 
             <div class="admin-panel">
-                <h3>Complaints by category <span class="sample-tag">(sample data)</span></h3>
-                <div class="cat-bar-row"><span class="cat-label">Garbage</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:29%"></div></div><span class="cat-num">2</span></div>
-                <div class="cat-bar-row"><span class="cat-label">Noise</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:14%"></div></div><span class="cat-num">1</span></div>
-                <div class="cat-bar-row"><span class="cat-label">Road and lighting</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:29%"></div></div><span class="cat-num">2</span></div>
-                <div class="cat-bar-row"><span class="cat-label">Flooding</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:14%"></div></div><span class="cat-num">1</span></div>
-                <div class="cat-bar-row"><span class="cat-label">Others</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:14%"></div></div><span class="cat-num">1</span></div>
+                <h3>Complaints by category</h3>
+                {{categoryBars}}
             </div>
             </aside>
         </div>

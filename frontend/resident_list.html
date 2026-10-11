@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{pageTitle}} – AGAP</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="container navbar-inner">
+      <a href="/dashboard" class="logo">
+        <span class="logo-name">AGAP</span>
+        <span class="logo-sub">Community Complaint System</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/dashboard">Home</a>
+        <a href="/dashboard#recent-complaints">My Complaints</a>
+      </nav>
+      <div class="navbar-user">
+        <span class="avatar">{{initials}}</span>
+        <a href="/signout">Sign out</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <p><a href="/dashboard">&lsaquo; Back to home</a></p>
+    <h1>{{pageTitle}}</h1>
+    <p class="muted">{{pageIntro}}</p>
+    <div style="margin-top:16px">
+      {{listRows}}
+    </div>
+  </main>
+</body>
+</html>

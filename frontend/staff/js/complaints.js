@@ -1,9 +1,7 @@
 // Filters the complaints table by status tab, category dropdown, and search text.
-// This all happens in the browser because the table is still sample data (see the
-// HTML comment above the table). Once complaints are saved on the server, this same
-// job should move to C++: the filters would become URL query parameters like
-// /admin/complaints?status=pending&category=Garbage, and the server would only send
-// the matching rows, instead of hiding rows that were already sent to the browser.
+// The rows are real (built by the server from data/complaints.txt). This script only
+// shows/hides rows that were already sent, so the page filters instantly. A link such
+// as /admin/complaints?status=pending opens with that tab already selected.
 
 const rows = Array.from(document.querySelectorAll("#complaintsBody tr"));
 const tabs = document.querySelectorAll("#statusTabs .tab");
@@ -40,6 +38,17 @@ tabs.forEach(function (tab) {
     applyFilters();
   });
 });
+
+// Open with the tab named in the URL (?status=pending), if there is one.
+const wantedStatus = new URLSearchParams(window.location.search).get("status");
+tabs.forEach(function (tab) {
+  if (wantedStatus && tab.dataset.status === wantedStatus) {
+    tabs.forEach(function (t) { t.classList.remove("active"); });
+    tab.classList.add("active");
+    activeStatus = wantedStatus;
+  }
+});
+applyFilters();
 
 searchBox.addEventListener("input", applyFilters);
 categoryFilter.addEventListener("change", applyFilters);
