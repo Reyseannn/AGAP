@@ -1,0 +1,7 @@
+# Compiled binary
+backend/*.exe
+backend/agap
+
+# Runtime data (resident accounts, ID photos, complaints, generated PDFs)
+data/
+Data/

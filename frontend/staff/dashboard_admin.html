@@ -1,0 +1,152 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard – AGAP Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/staff/css/admin.css">
+    </head>
+    <body class="admin-body">
+    <div class="admin-shell">
+
+    <!-- SIDEBAR: the same block is copied onto every admin page; only the "active" link changes. -->
+    <aside class="admin-sidebar">
+        <a href="/admin/dashboard" class="logo">
+        <span class="logo-name">AGAP <span class="admin-tag">Admin</span></span>
+        <span class="logo-sub">Barangay Sample</span>
+        </a>
+        <nav class="admin-nav">
+        <a href="/admin/dashboard" class="active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+            Dashboard
+        </a>
+        <a href="/admin/complaints">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H8l-4 4V4z"/></svg>
+            Complaints
+        </a>
+        <a href="/admin/residents">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="18" cy="9" r="2.5"/><path d="M15.5 14c2.6.3 4.5 2.4 4.5 6"/></svg>
+            Residents
+            {{residentsNavBadge}}
+        </a>
+        <a href="/admin/announcements">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h3l5 4V6L7 10H4z"/><path d="M16 9a3 3 0 0 1 0 6"/></svg>
+            Announcements
+        </a>
+        <a href="/admin/reports">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>
+            Reports
+        </a>
+        <a href="/admin/settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+            Settings
+        </a>
+        </nav>
+        <div class="admin-sidebar-foot">
+        <span class="avatar">{{staffInitials}}</span>
+        <div>
+            <strong style="color:#fff">{{staffName}}</strong><br>
+            <a href="/admin/signout">Sign out</a>
+        </div>
+        </div>
+    </aside>
+
+    <div class="admin-main">
+        <header class="admin-topbar">
+        <div>
+            <h1>Dashboard</h1>
+            <p class="muted">Barangay Sample | Today, {{todayDate}}</p>
+        </div>
+        <div class="admin-topbar-actions">
+            <a href="#" class="btn btn-outline">Export</a>
+            <a href="/admin/complaints?status=pending" class="btn btn-yellow">Pending Review</a>
+        </div>
+        </header>
+
+        <main class="admin-content">
+
+        {{verificationNotice}}
+
+        <!-- SAMPLE DATA: these 4 numbers come from the Figma, not from real complaints,
+            because complaint storage hasn't been built yet (Step 3/4). Once complaints
+            are saved to a data file, this section should count them the same way
+            countResidentsByVerification() counts residents in storage.cpp. -->
+        <div class="summary-cards">
+            <div class="summary-card">
+            <div class="num">7</div>
+            <div class="label">Total complaints</div>
+            <div class="delta">&uarr; 3 this week</div>
+            </div>
+            <div class="summary-card">
+            <div class="num">4</div>
+            <div class="label">Pending</div>
+            <div class="delta warn">4 need review today</div>
+            </div>
+            <div class="summary-card">
+            <div class="num">2</div>
+            <div class="label">In progress</div>
+            <div class="delta">Being handled</div>
+            </div>
+            <div class="summary-card">
+            <div class="num">1</div>
+            <div class="label">Resolved</div>
+            <div class="delta">Completed this month</div>
+            </div>
+        </div>
+
+        <div class="admin-grid">
+            <section>
+            <div class="admin-panel">
+                <div class="admin-panel-head">
+                <h3>Recent complaints <span class="sample-tag">(sample data)</span></h3>
+                <a href="/admin/complaints">View all</a>
+                </div>
+                <table class="admin-table">
+                <thead><tr><th>Resident</th><th>Category</th><th>Submitted</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td>Pedro Santos</td><td>Others</td><td>Oct 3, 2026</td><td><span class="badge badge-pending">Pending</span></td></tr>
+                    <tr><td>Ana Reyes</td><td>Road and lighting</td><td>Oct 3, 2026</td><td><span class="badge badge-pending">Pending</span></td></tr>
+                    <tr><td>Juan Dela Cruz</td><td>Garbage</td><td>Oct 3, 2026</td><td><span class="badge badge-pending">Pending</span></td></tr>
+                    <tr><td>Juan Dela Cruz</td><td>Noise</td><td>Oct 3, 2026</td><td><span class="badge badge-pending">Pending</span></td></tr>
+                    <tr><td>Juan Dela Cruz</td><td>Garbage</td><td>Oct 2, 2026</td><td><span class="badge badge-progress">In progress</span></td></tr>
+                </tbody>
+                </table>
+            </div>
+            </section>
+
+            <aside>
+            <div class="admin-panel">
+                <h3>Needs attention</h3>
+                <div class="attention-item">
+                <span>Awaiting ID verification</span>
+                <strong>{{pendingCount}} resident{{pendingPlural}}</strong>
+                </div>
+                <div class="attention-item">
+                <span>New residents this week <span class="sample-tag">(sample)</span></span>
+                <strong>5 residents</strong>
+                </div>
+                <div class="attention-item">
+                <span>Unassigned complaints <span class="sample-tag">(sample)</span></span>
+                <strong>4 complaints</strong>
+                </div>
+            </div>
+
+            <div class="admin-panel">
+                <h3>Complaints by category <span class="sample-tag">(sample data)</span></h3>
+                <div class="cat-bar-row"><span class="cat-label">Garbage</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:29%"></div></div><span class="cat-num">2</span></div>
+                <div class="cat-bar-row"><span class="cat-label">Noise</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:14%"></div></div><span class="cat-num">1</span></div>
+                <div class="cat-bar-row"><span class="cat-label">Road and lighting</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:29%"></div></div><span class="cat-num">2</span></div>
+                <div class="cat-bar-row"><span class="cat-label">Flooding</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:14%"></div></div><span class="cat-num">1</span></div>
+                <div class="cat-bar-row"><span class="cat-label">Others</span><div class="cat-bar-track"><div class="cat-bar-fill" style="width:14%"></div></div><span class="cat-num">1</span></div>
+            </div>
+            </aside>
+        </div>
+
+        </main>
+    </div>
+    </div>
+    </body>
+    </html>

@@ -23,6 +23,10 @@
       "source": "/signout",
       "destination": "https://agap-backend-reysean.onrender.com/signout"
     },
+    {
+      "source": "/file-complaint",
+      "destination": "https://agap-backend-reysean.onrender.com/file-complaint"
+    },
     { "source": "/signin", "destination": "/signin.html" },
     { "source": "/signup", "destination": "/signup.html" },
     { "source": "/verify", "destination": "/verify.html" },

@@ -61,8 +61,8 @@ const word_t add_constant[64] = {
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
 const word_t initial_message_digest[8] = {0x6a09e667, 0xbb67ae85, 0x3c6ef372,
-                                          0xa54ff53a, 0x510e527f, 0x9b05688c,
-                                          0x1f83d9ab, 0x5be0cd19};
+                                        0xa54ff53a, 0x510e527f, 0x9b05688c,
+                                        0x1f83d9ab, 0x5be0cd19};
 
 inline word_t ch(word_t x, word_t y, word_t z) { return (x & y) ^ ((~x) & z); }
 
@@ -91,7 +91,7 @@ inline word_t ssig1(word_t x) { return rotr(x, 17) ^ rotr(x, 19) ^ shr(x, 10); }
 template <typename RaIter1, typename RaIter2>
 void hash256_block(RaIter1 message_digest, RaIter2 first, RaIter2 last) {
     assert(first + 64 == last);
-    static_cast<void>(last);  // for avoiding unused-variable warning
+    static_cast<void>(last);
     word_t w[64];
     std::fill(w, w + 64, word_t(0));
     for (std::size_t i = 0; i < 16; ++i) {
@@ -102,7 +102,7 @@ void hash256_block(RaIter1 message_digest, RaIter2 first, RaIter2 last) {
     }
     for (std::size_t i = 16; i < 64; ++i) {
         w[i] = mask_32bit(ssig1(w[i - 2]) + w[i - 7] + ssig0(w[i - 15]) +
-                          w[i - 16]);
+                        w[i - 16]);
     }
 
     word_t a = *message_digest;
