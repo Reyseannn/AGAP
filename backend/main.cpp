@@ -92,14 +92,21 @@ static string toLower(string text) {
 // Residents use the "session" cookie, staff use a separate "admin_session"
 // cookie, so a resident login and a staff login never interfere with each other.
 static string getCookie(const httplib::Request& req, const string& name) {
+    // The header looks like:  admin_session=AAA; session=BBB
+    // Each cookie is checked by its WHOLE name. (Searching for the text "session=" would
+    // also match inside "admin_session=" and return the staff token as the resident's.)
     string cookies = req.get_header_value("Cookie");
-    string key = name + "=";
-    size_t start = cookies.find(key);
-    if (start == string::npos) return "";
-    start += key.length();
-    size_t end = cookies.find(';', start);
-    if (end == string::npos) return cookies.substr(start);
-    return cookies.substr(start, end - start);
+    stringstream parts(cookies);
+    string part;
+    while (getline(parts, part, ';')) {
+        size_t start = part.find_first_not_of(' ');
+        if (start == string::npos) continue;
+        part = part.substr(start);
+        size_t equals = part.find('=');
+        if (equals == string::npos) continue;
+        if (part.substr(0, equals) == name) return part.substr(equals + 1);
+    }
+    return "";
 }
 
 static string getSessionToken(const httplib::Request& req) {
@@ -351,8 +358,10 @@ int main(int argc, char** argv) {
             return;
         }
 
+        // A resident may not register with an email that belongs to a staff account.
         User existing;
-        if (findUser(login, existing)) {
+        Staff existingStaff;
+        if (findUser(login, existing) || findStaff(login, existingStaff)) {
             showAuthPage(res, "signup.html", "That email or username is already registered.");
             return;
         }
