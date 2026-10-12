@@ -1295,7 +1295,7 @@ int main(int argc, char** argv) {
     server.Get("/admin/signout", [](const httplib::Request& req, httplib::Response& res) {
         deleteSession(getAdminSessionToken(req));
         res.set_header("Set-Cookie", "admin_session=; Path=/; Max-Age=0");
-        res.set_redirect("/admin");
+        res.set_redirect("/");  // back to the home page (http://localhost:8080/), same as residents
     });
 
     // SIGN OUT: forget the session and clear the cookie.
