@@ -1,4 +1,5 @@
 #include "announcement_storage.h"
+#include "file_util.h"
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -32,7 +33,7 @@ static vector<Announcement> readAll() {
     ifstream file(ANNOUNCEMENTS_FILE);
     string line;
     while (getline(file, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        cleanLine(line);
         if (line.empty()) continue;
         vector<string> f = splitByTab(line);
         Announcement a;
@@ -53,11 +54,7 @@ vector<Announcement> listAnnouncements() {
 }
 
 bool addAnnouncement(const Announcement& announcement) {
-    filesystem::create_directories("../data");  // does nothing if it already exists
-    ofstream file(ANNOUNCEMENTS_FILE, ios::app);  // app = add to the end
-    if (!file) return false;
-    file << toLine(announcement) << "\n";
-    return true;
+    return appendLine(ANNOUNCEMENTS_FILE, toLine(announcement));
 }
 
 bool deleteAnnouncement(const string& id) {

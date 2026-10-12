@@ -1,5 +1,6 @@
 #include "staff_storage.h"
 #include "auth.h"
+#include "file_util.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -25,7 +26,7 @@ bool findStaff(const string& login, Staff& found) {
     string line;
 
     while (getline(file, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();  // Notepad adds \r on Windows
+        cleanLine(line);
 
         vector<string> f = splitByTab(line);
         if (f.size() != 6) continue;  // skip broken lines
@@ -44,12 +45,8 @@ bool findStaff(const string& login, Staff& found) {
 }
 
 bool addStaff(const Staff& staff) {
-    ofstream file(STAFF_FILE, ios::app);  // app = add to the end
-    if (!file) return false;
-
-    file << staff.login << '\t' << staff.fullName << '\t' << staff.role << '\t'
-         << staff.salt << '\t' << staff.passwordHash << '\t' << staff.status << '\n';
-    return true;
+    return appendLine(STAFF_FILE, staff.login + '\t' + staff.fullName + '\t' + staff.role + '\t' +
+                                   staff.salt + '\t' + staff.passwordHash + '\t' + staff.status);
 }
 
 void ensureDefaultAdmin() {
@@ -71,5 +68,7 @@ void ensureDefaultAdmin() {
         cout << "  Password: admin123" << endl;
         cout << "Sign in at /admin, then change this password (Step 8: Settings)." << endl;
         cout << "----------------------------------------------------------" << endl;
+    } else {
+        cout << "WARNING: could not create the starter admin account (see the error above)." << endl;
     }
 }

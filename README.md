@@ -50,6 +50,9 @@ AGAP/
 │   ├── complaint_storage.h / .cpp     Complaints (data/complaints.txt) — filing, listing,
 │   │                                   status changes
 │   ├── announcement_storage.h / .cpp  Announcements (data/announcements.txt)
+│   ├── file_util.h / .cpp             Shared by all storage files: appends a line safely
+│   │                                   (creates data/ if missing, fixes a missing final newline)
+│   │                                   and cleans Windows "\r" / Notepad BOM from lines read
 │   ├── pdf_report.h / .cpp            Hand-written PDF generator (no library)
 │   ├── httplib.h                      third-party, single header — https://github.com/yhirose/cpp-httplib
 │   └── picosha2.h                     third-party, single header — https://github.com/okdshin/PicoSHA2
@@ -98,7 +101,7 @@ copy of the server, compiles, and runs.
 **Compile by hand** (run from inside the `backend` folder — this matters, see section 9):
 
 ```
-g++ main.cpp storage.cpp auth.cpp staff_storage.cpp pdf_report.cpp announcement_storage.cpp complaint_storage.cpp -o agap.exe -std=c++17 -lws2_32
+g++ main.cpp storage.cpp auth.cpp staff_storage.cpp pdf_report.cpp announcement_storage.cpp complaint_storage.cpp file_util.cpp -o agap.exe -std=c++17 -lws2_32
 ```
 
 (On Linux/macOS, drop `-lws2_32`, add `-pthread`, and name the output `agap`.)
@@ -108,6 +111,11 @@ g++ main.cpp storage.cpp auth.cpp staff_storage.cpp pdf_report.cpp announcement_
 ```
 agap.exe
 ```
+
+The server creates `data/` (and `ids/`, `complaint_photos/`, `reports/` inside it) by itself,
+and prints `Data folder: <full path>` when it starts — that is where residents are saved.
+`data/` is not in git, so a fresh copy of the project starts without it. If the server is
+started from the wrong folder, it finds the `backend` folder on its own.
 
 The very first time it runs, if `data/staff.txt` doesn't exist yet, the server creates one
 starter admin account and prints the password **to the console only**:
@@ -421,3 +429,23 @@ Whenever this project changes in a new session, update the relevant section
 above — especially sections 5 (features), 7 (bugs), 8 (real data),
 and 10 (known issues) — so the next handoff stays accurate. Don't leave this
 file describing features or fixes that no longer match the actual code.
+
+---
+
+## 12. Bug: residents could not be created or opened (admin worked) — fixed
+
+Symptom: sign-up redirected to the dashboard, which immediately bounced back to the sign-in
+page, and signing in with that account failed. Staff login still worked.
+
+Causes found by reproducing it:
+- `users.txt` saved by hand (e.g. in Notepad) with **no newline at the end**. The next sign-up
+  was appended to the *end of the last line*, so the new account was glued onto an old one
+  (the old row grew from 7 to 15 columns) and could never be found again.
+- A **UTF-8 BOM** at the start of a data file made the first login in it never match.
+- A **missing `data/` folder** (it is not in git) made every save fail with no message on the
+  console — including creating the starter admin.
+- Starting the server **outside `backend/`** pointed `../data` at the wrong place.
+
+Fix: `file_util.cpp` (`appendLine`, `cleanLine`) is used by every storage file; `main()` creates
+`data/` and finds the backend folder; failures print `ERROR: could not write to <full path>`.
+**Never edit the data files by hand while the server is running, and keep the final newline.**

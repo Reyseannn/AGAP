@@ -1,4 +1,5 @@
 #include "storage.h"
+#include "file_util.h"
 #include <fstream>
 #include <functional>
 #include <sstream>
@@ -56,7 +57,7 @@ bool findUser(const string& login, User& found) {
     string line;
 
     while (getline(file, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();  // Notepad adds \r on Windows
+        cleanLine(line);
         if (line.empty()) continue;
 
         vector<string> f = splitByTab(line);
@@ -74,7 +75,7 @@ vector<User> listAllUsers() {
     string line;
 
     while (getline(file, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        cleanLine(line);
         if (line.empty()) continue;
 
         users.push_back(fieldsToUser(splitByTab(line)));
@@ -83,11 +84,7 @@ vector<User> listAllUsers() {
 }
 
 bool addUser(const User& user) {
-    ofstream file(USERS_FILE, ios::app);
-    if (!file) return false;
-
-    file << userToLine(user) << '\n';
-    return true;
+    return appendLine(USERS_FILE, userToLine(user));
 }
 
 // Shared by saveVerificationRequest and setVerificationDecision: reads every
@@ -103,7 +100,7 @@ static bool updateOneUser(const string& login, const std::function<void(User&)>&
     bool found = false;
 
     while (getline(in, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        cleanLine(line);
         if (line.empty()) continue;
 
         vector<string> f = splitByTab(line);

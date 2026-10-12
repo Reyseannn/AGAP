@@ -1,4 +1,5 @@
 #include "complaint_storage.h"
+#include "file_util.h"
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -26,7 +27,7 @@ static vector<Complaint> readAll() {
     ifstream file(COMPLAINTS_FILE);
     string line;
     while (getline(file, line)) {
-        if (!line.empty() && line.back() == '\r') line.pop_back();
+        cleanLine(line);
         if (line.empty()) continue;
         vector<string> f = splitByTab(line);
         Complaint c;
@@ -51,12 +52,8 @@ string nextComplaintId() {
 }
 
 bool addComplaint(const Complaint& c) {
-    filesystem::create_directories("../data");
-    ofstream file(COMPLAINTS_FILE, ios::app);
-    if (!file) return false;
-    file << c.id << '\t' << c.login << '\t' << c.category << '\t' << c.location << '\t'
-         << c.description << '\t' << c.status << '\t' << c.filedDate << '\t' << c.photoFile << "\n";
-    return true;
+    return appendLine(COMPLAINTS_FILE, c.id + '\t' + c.login + '\t' + c.category + '\t' + c.location + '\t' +
+                                         c.description + '\t' + c.status + '\t' + c.filedDate + '\t' + c.photoFile);
 }
 
 vector<Complaint> listComplaintsFor(const string& login) {

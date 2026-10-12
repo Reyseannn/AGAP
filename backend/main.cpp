@@ -288,8 +288,43 @@ static void showComingSoon(httplib::Response& res, const Staff& staff, const str
 
 // ---------- The server ----------
 
-int main() {
+// Every file path in this program starts with "../" (../frontend, ../data), so the server
+// must run with the backend folder as its working directory. server.bat does that. If it
+// was started from somewhere else (the project folder, or a double-click from another
+// place), this finds the backend folder and moves into it. Otherwise resident accounts
+// would silently be read from and saved to the wrong place.
+static bool moveIntoBackendFolder(const char* programPath) {
+    error_code ignored;
+    if (filesystem::exists("../frontend", ignored)) return true;  // already in backend
+
+    vector<filesystem::path> candidates;
+    candidates.push_back(filesystem::path("backend"));                                   // started from the project folder
+    candidates.push_back(filesystem::absolute(programPath, ignored).parent_path());      // wherever agap.exe itself is
+    for (const filesystem::path& folder : candidates) {
+        if (filesystem::exists(folder / ".." / "frontend", ignored)) {
+            filesystem::current_path(folder, ignored);
+            return !ignored;
+        }
+    }
+    return false;
+}
+
+int main(int argc, char** argv) {
+    if (!moveIntoBackendFolder(argc > 0 ? argv[0] : "")) {
+        cerr << "ERROR: could not find the frontend folder. Start the server from inside the "
+                "backend folder (or use server.bat)." << endl;
+        return 1;
+    }
+
+    // data/ is not stored in git, so a fresh copy of the project doesn't have it. Create it
+    // (and the folders inside it) before anything tries to save a resident or staff account.
+    error_code ignored;
+    filesystem::create_directories("../data/ids", ignored);
+    filesystem::create_directories("../data/complaint_photos", ignored);
+    filesystem::create_directories("../data/reports", ignored);
+
     ensureDefaultAdmin();  // creates one starter admin account if data/staff.txt doesn't exist yet
+    cout << "Data folder: " << filesystem::absolute("../data", ignored).lexically_normal().string() << endl;
 
     httplib::Server server;
 
@@ -330,7 +365,7 @@ int main() {
         user.verification = "unverified";
 
         if (!addUser(user)) {
-            showAuthPage(res, "signup.html", "Could not save your account. Does the data folder exist?");
+            showAuthPage(res, "signup.html", "Could not save your account. Please look at the server window for the file it could not write to.");
             return;
         }
         startSession(res, login);
