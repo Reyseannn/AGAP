@@ -14,13 +14,7 @@
 #include <sstream>
 using namespace std;
 
-// ---------- Small helper functions ----------
 
-// Reads a whole file into a string. If the file can't be found, this returns
-// a visible error page instead of silently sending back an empty page — a
-// blank white screen in the browser gives no clue what went wrong, but this
-// does. The most common cause: the server wasn't started from inside the
-// backend folder, so its "../frontend/..." paths don't point anywhere real.
 static string readFile(const string& path) {
     ifstream file(path);
     if (!file) {
@@ -38,7 +32,6 @@ static string readFile(const string& path) {
     return text.str();
 }
 
-// Replaces every "from" inside "text" with "to".
 static string replaceAll(string text, const string& from, const string& to) {
     size_t position = 0;
     while ((position = text.find(from, position)) != string::npos) {
@@ -48,16 +41,14 @@ static string replaceAll(string text, const string& from, const string& to) {
     return text;
 }
 
-// Stops a name like <b>Juan</b> from becoming real HTML on the page.
 static string escapeHtml(string text) {
-    text = replaceAll(text, "&", "&amp;");  // must be first
+    text = replaceAll(text, "&", "&amp;");
     text = replaceAll(text, "<", "&lt;");
     text = replaceAll(text, ">", "&gt;");
     text = replaceAll(text, "\"", "&quot;");
     return text;
 }
 
-// Removes tabs/newlines (they would break users.txt) and spaces at the ends.
 static string cleanField(string text) {
     for (char& c : text) {
         if (c == '\t' || c == '\n' || c == '\r') c = ' ';
@@ -68,7 +59,6 @@ static string cleanField(string text) {
     return text.substr(start, end - start + 1);
 }
 
-// Builds initials like "Juan Dela Cruz" -> "JC" (first letter of the first and last word).
 static string initialsOf(const string& fullName) {
     string first, last;
     stringstream words(fullName);
@@ -88,13 +78,7 @@ static string toLower(string text) {
     return text;
 }
 
-// Reads one named cookie's value out of the Cookie header.
-// Residents use the "session" cookie, staff use a separate "admin_session"
-// cookie, so a resident login and a staff login never interfere with each other.
 static string getCookie(const httplib::Request& req, const string& name) {
-    // The header looks like:  admin_session=AAA; session=BBB
-    // Each cookie is checked by its WHOLE name. (Searching for the text "session=" would
-    // also match inside "admin_session=" and return the staff token as the resident's.)
     string cookies = req.get_header_value("Cookie");
     stringstream parts(cookies);
     string part;
@@ -117,8 +101,6 @@ static string getAdminSessionToken(const httplib::Request& req) {
     return getCookie(req, "admin_session");
 }
 
-// Turns a complaint's status word into the matching badge CSS class
-// (these classes already exist in style.css, used on the resident side too).
 static string statusBadgeClassFor(const string& status) {
     if (status == "Pending") return "badge-pending";
     if (status == "In progress") return "badge-progress";
@@ -127,8 +109,6 @@ static string statusBadgeClassFor(const string& status) {
     return "badge-pending";
 }
 
-// Same idea, but for a resident's verification status (different words,
-// shown to staff on the Residents pages).
 static string residentStatusLabel(const string& verification) {
     if (verification == "pending") return "Awaiting review";
     if (verification == "verified") return "Verified";
@@ -142,21 +122,16 @@ static string residentStatusBadgeClass(const string& verification) {
     return "badge-pending";
 }
 
-// Today's date written out like the Figma shows it: "Oct 3, 2026".
-// Built from separate pieces (not one strftime format) because the "no leading
-// zero on the day" flag isn't the same on every compiler, and this way works
-// everywhere.
 static string todayFormatted() {
     time_t now = time(nullptr);
     tm local = *localtime(&now);
 
     char monthBuffer[8];
-    strftime(monthBuffer, sizeof(monthBuffer), "%b", &local);  // "Oct"
+    strftime(monthBuffer, sizeof(monthBuffer), "%b", &local);
 
     return string(monthBuffer) + " " + to_string(local.tm_mday) + ", " + to_string(local.tm_year + 1900);
 }
 
-// Sends sign in / sign up page again, with an error message shown on it.
 static void showAuthPage(httplib::Response& res, const string& file, const string& error) {
     string page = readFile("../frontend/" + file);
     string banner = "";
@@ -167,10 +142,6 @@ static void showAuthPage(httplib::Response& res, const string& file, const strin
     res.set_content(page, "text/html");
 }
 
-// Builds verify.html for one user: fills in their saved phone/address (so they
-// don't retype them), the "you already have a pending request" notice, and an
-// optional error banner. Used both for a normal page visit and for showing the
-// form again after a mistake.
 static void showVerifyPage(httplib::Response& res, const User& user, const string& error) {
     string page = readFile("../frontend/verify.html");
 
@@ -192,24 +163,20 @@ static void showVerifyPage(httplib::Response& res, const User& user, const strin
     res.set_content(page, "text/html");
 }
 
-// Logs the user in: creates a session, gives the browser its cookie, goes to the dashboard.
 static void startSession(httplib::Response& res, const string& login) {
     string token = createSession(login);
     res.set_header("Set-Cookie", "session=" + token + "; Path=/; HttpOnly; SameSite=Lax");
     res.set_redirect("/dashboard");
 }
 
-// Turns the saved "verification" field into the CSS class dashboard.html expects.
-// "unverified" (a brand-new account) reuses the Figma's welcome screen, state-new.
 static string stateClassFor(const string& verification) {
     if (verification == "unverified") return "state-new";
     if (verification == "pending")    return "state-pending";
     if (verification == "rejected")   return "state-rejected";
-    return "state-verified";
+    if (verification == "verified")   return "state-verified";
+    return "state-new";
 }
 
-// Keeps only letters, digits, '.', '_' and '-', so a login can't be used to escape the folder
-// (for example "../../something"). Used to build a safe file name for the uploaded ID photo.
 static string safeFileName(const string& text) {
     string result;
     for (char c : text) {
@@ -219,7 +186,6 @@ static string safeFileName(const string& text) {
     return result;
 }
 
-// Shows the file-a-complaint form again, with an optional error banner on it.
 static void showComplaintPage(httplib::Response& res, const User& user, const string& error) {
     string page = readFile("../frontend/filecomplaint.html");
     string banner = "";
@@ -232,12 +198,10 @@ static void showComplaintPage(httplib::Response& res, const User& user, const st
     res.set_content(page, "text/html");
 }
 
-// A complaint has no title of its own, so the pages show "Category - location".
 static string complaintTitle(const Complaint& c) {
     return c.category + " - " + c.location;
 }
 
-// The short word complaints_admin.html's tabs use in data-status="...".
 static string statusKeyFor(const string& status) {
     if (status == "In progress") return "progress";
     if (status == "Resolved") return "resolved";
@@ -245,13 +209,10 @@ static string statusKeyFor(const string& status) {
     return "pending";
 }
 
-// Only these four words are allowed as a complaint status.
 static bool isValidStatus(const string& status) {
     return status == "Pending" || status == "In progress" || status == "Resolved" || status == "Rejected";
 }
 
-// Quotes one cell for the CSV export. A cell starting with = + - or @ would be run as a
-// formula by Excel, so a ' is put in front of it (text a resident typed must never do that).
 static string csvCell(string text) {
     if (!text.empty() && (text[0] == '=' || text[0] == '+' || text[0] == '-' || text[0] == '@')) {
         text = "'" + text;
@@ -260,8 +221,6 @@ static string csvCell(string text) {
     return "\"" + text + "\"";
 }
 
-// Checks that the request comes from an active staff member. Fills "staff" and returns
-// true if so; otherwise sends them to the sign-in page and returns false.
 static bool requireStaff(const httplib::Request& req, httplib::Response& res, Staff& staff) {
     string login = loginFromSession(getAdminSessionToken(req));
     if (login.empty() || !findStaff(login, staff) || staff.status != "active") {
@@ -271,13 +230,11 @@ static bool requireStaff(const httplib::Request& req, httplib::Response& res, St
     return true;
 }
 
-// The red "N" bubble next to Residents in the admin sidebar.
 static string residentsNavBadge() {
     VerificationCounts counts = countResidentsByVerification();
     return (counts.pending > 0) ? "<span class=\"nav-count\">" + to_string(counts.pending) + "</span>" : "";
 }
 
-// Fills in the parts every admin page has (staff name, sidebar badge).
 static string fillAdminShell(string page, const Staff& staff) {
     page = replaceAll(page, "{{staffName}}", escapeHtml(staff.fullName));
     page = replaceAll(page, "{{staffInitials}}", escapeHtml(initialsOf(staff.fullName)));
@@ -285,7 +242,6 @@ static string fillAdminShell(string page, const Staff& staff) {
     return page;
 }
 
-// Shows one of the "not built yet" admin pages (Reports, Settings) so their sidebar links work.
 static void showComingSoon(httplib::Response& res, const Staff& staff, const string& title, const string& note) {
     string page = fillAdminShell(readFile("../frontend/staff/coming_soon_admin.html"), staff);
     page = replaceAll(page, "{{pageTitle}}", title);
@@ -293,20 +249,14 @@ static void showComingSoon(httplib::Response& res, const Staff& staff, const str
     res.set_content(page, "text/html");
 }
 
-// ---------- The server ----------
 
-// Every file path in this program starts with "../" (../frontend, ../data), so the server
-// must run with the backend folder as its working directory. server.bat does that. If it
-// was started from somewhere else (the project folder, or a double-click from another
-// place), this finds the backend folder and moves into it. Otherwise resident accounts
-// would silently be read from and saved to the wrong place.
 static bool moveIntoBackendFolder(const char* programPath) {
     error_code ignored;
-    if (filesystem::exists("../frontend", ignored)) return true;  // already in backend
+    if (filesystem::exists("../frontend", ignored)) return true;
 
     vector<filesystem::path> candidates;
-    candidates.push_back(filesystem::path("backend"));                                   // started from the project folder
-    candidates.push_back(filesystem::absolute(programPath, ignored).parent_path());      // wherever agap.exe itself is
+    candidates.push_back(filesystem::path("backend"));
+    candidates.push_back(filesystem::absolute(programPath, ignored).parent_path());
     for (const filesystem::path& folder : candidates) {
         if (filesystem::exists(folder / ".." / "frontend", ignored)) {
             filesystem::current_path(folder, ignored);
@@ -323,22 +273,18 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // data/ is not stored in git, so a fresh copy of the project doesn't have it. Create it
-    // (and the folders inside it) before anything tries to save a resident or staff account.
     error_code ignored;
     filesystem::create_directories("../data/ids", ignored);
     filesystem::create_directories("../data/complaint_photos", ignored);
     filesystem::create_directories("../data/reports", ignored);
 
-    ensureDefaultAdmin();  // creates one starter admin account if data/staff.txt doesn't exist yet
+    ensureDefaultAdmin();
     cout << "Data folder: " << filesystem::absolute("../data", ignored).lexically_normal().string() << endl;
 
     httplib::Server server;
 
-    // Serves the HTML, CSS and JS files from the frontend folder.
     server.set_mount_point("/", "../frontend");
 
-    // SIGN UP: the form on signup.html sends its data here.
     server.Post("/signup", [](const httplib::Request& req, httplib::Response& res) {
         string fullName = cleanField(req.get_param_value("fullname"));
         string login = toLower(cleanField(req.get_param_value("login")));
@@ -358,7 +304,6 @@ int main(int argc, char** argv) {
             return;
         }
 
-        // A resident may not register with an email that belongs to a staff account.
         User existing;
         Staff existingStaff;
         if (findUser(login, existing) || findStaff(login, existingStaff)) {
@@ -380,18 +325,10 @@ int main(int argc, char** argv) {
         startSession(res, login);
     });
 
-    // SIGN IN: one shared form (signin.html) for both residents and staff.
-    // A login is sent to the admin dashboard only if it's a real row in
-    // data/staff.txt — a file the public /signup form can never write to.
-    // Nothing about the email address itself (like its domain) grants access;
-    // only actually being a staff account does.
     server.Post("/signin", [](const httplib::Request& req, httplib::Response& res) {
         string login = toLower(cleanField(req.get_param_value("login")));
         string password = req.get_param_value("password");
 
-        // Check staff first. If this email belongs to a staff account, it's
-        // authenticated against the staff table only — not also tried as a
-        // resident — which keeps the two account types from blurring together.
         Staff staff;
         if (findStaff(login, staff)) {
             if (hashPassword(staff.salt, password) != staff.passwordHash) {
@@ -408,12 +345,9 @@ int main(int argc, char** argv) {
             return;
         }
 
-        // Not staff — check the resident table as before.
         User user;
         bool found = findUser(login, user);
 
-        // Same message for "no such account" and "wrong password" in every case
-        // above and below, so nobody can guess which emails exist or which are staff.
         if (!found || hashPassword(user.salt, password) != user.passwordHash) {
             showAuthPage(res, "signin.html", "Wrong email or password. Please try again.");
             return;
@@ -421,13 +355,12 @@ int main(int argc, char** argv) {
         startSession(res, login);
     });
 
-    // DASHBOARD (temporary version, we build the real one in Step 6).
     server.Get("/dashboard", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getSessionToken(req));
 
         User user;
         if (login.empty() || !findUser(login, user)) {
-            res.set_redirect("/signin.html");  // not logged in
+            res.set_redirect("/signin.html");
             return;
         }
 
@@ -435,9 +368,6 @@ int main(int argc, char** argv) {
         string phoneDisplay = user.phone.empty() ? "Not added yet" : user.phone;
         string addressDisplay = user.address.empty() ? "Not added yet" : user.address;
 
-        // When rejected, show the real reason staff gave instead of a generic
-        // message. Falls back to a generic line only for old test data saved
-        // before rejection reasons existed.
         string rejectionMessage = user.rejectionReason.empty()
             ? "Please upload a clearer photo of your ID."
             : user.rejectionReason;
@@ -452,7 +382,6 @@ int main(int argc, char** argv) {
         page = replaceAll(page, "{{rejectionReason}}", escapeHtml(rejectionMessage));
         page = replaceAll(page, "{{state}}", stateClassFor(user.verification));
 
-        // Real announcements, newest first, same list staff post from /admin/announcements.
         vector<Announcement> announcements = listAnnouncements();
         string announcementRows = "";
         for (size_t i = 0; i < announcements.size() && i < 4; i++) {
@@ -464,7 +393,6 @@ int main(int argc, char** argv) {
         }
         page = replaceAll(page, "{{announcementRows}}", announcementRows);
 
-        // The resident's own real complaints (data/complaints.txt), newest first, max 4.
         string complaintRows = "";
         vector<Complaint> mine = listComplaintsFor(user.login);
         for (size_t i = 0; i < mine.size() && i < 4; i++) {
@@ -480,7 +408,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // VERIFY ACCOUNT page (GET): shows the form with the resident's saved phone/address filled in.
     server.Get("/verify", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getSessionToken(req));
         User user;
@@ -491,24 +418,21 @@ int main(int argc, char** argv) {
         showVerifyPage(res, user, "");
     });
 
-    // VERIFY ACCOUNT (POST): the form on verify.html sends the phone, address and ID photo here.
     server.Post("/verify", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getSessionToken(req));
         User user;
         if (login.empty() || !findUser(login, user)) {
-            res.set_redirect("/signin.html");  // not logged in
+            res.set_redirect("/signin.html");
             return;
         }
 
-        // Multipart forms (needed because this form also carries a file) keep their text
-        // fields in req.form, not in req.get_param_value like a plain POST form does.
         string phone = cleanField(req.form.get_field("phone"));
         string address = cleanField(req.form.get_field("address"));
         string idType = cleanField(req.form.get_field("idtype"));
-        if (idType.empty()) idType = "Barangay ID";  // the form's own default option
+        if (idType.empty()) idType = "Barangay ID";
 
         if (phone.empty() || address.empty()) {
-            user.phone = phone;      // show back whatever they already typed
+            user.phone = phone;
             user.address = address;
             showVerifyPage(res, user, "Please fill in your phone number and address.");
             return;
@@ -534,7 +458,7 @@ int main(int argc, char** argv) {
             showVerifyPage(res, user, "Please upload a JPG or PNG image.");
             return;
         }
-        const size_t MAX_SIZE = 5 * 1024 * 1024;  // 5 MB, matches the Figma
+        const size_t MAX_SIZE = 5 * 1024 * 1024;
         if (photo.content.size() > MAX_SIZE) {
             user.phone = phone;
             user.address = address;
@@ -542,11 +466,9 @@ int main(int argc, char** argv) {
             return;
         }
 
-        // Pick the file extension from the content type, not from the uploaded file name
-        // (the file name comes from the user's computer and shouldn't be trusted).
         string extension = (photo.content_type == "image/png") ? ".png" : ".jpg";
 
-        filesystem::create_directories("../data/ids");  // does nothing if it already exists
+        filesystem::create_directories("../data/ids");
         string path = "../data/ids/" + safeFileName(login) + extension;
 
         ofstream out(path, ios::binary);
@@ -563,7 +485,6 @@ int main(int argc, char** argv) {
         res.set_redirect("/dashboard");
     });
 
-    // MY COMPLAINTS: every complaint the logged-in resident filed.
     server.Get("/my-complaints", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getSessionToken(req));
         User user;
@@ -587,7 +508,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // ANNOUNCEMENTS: the full list (the dashboard only shows the newest 4).
     server.Get("/announcements", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getSessionToken(req));
         User user;
@@ -611,8 +531,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // FILE A COMPLAINT: only residents whose ID was approved (verified) can file.
-    // The page has no ".html" in its URL for the same reason /verify doesn't (README, section 7).
     server.Get("/file-complaint", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getSessionToken(req));
         User user;
@@ -621,7 +539,7 @@ int main(int argc, char** argv) {
             return;
         }
         if (user.verification != "verified") {
-            res.set_redirect("/verify");  // must get the ID approved first
+            res.set_redirect("/verify");
             return;
         }
         showComplaintPage(res, user, "");
@@ -639,7 +557,6 @@ int main(int argc, char** argv) {
             return;
         }
 
-        // The form has a file input, so its text fields come from req.form (README, bug #5).
         string categoryKey = cleanField(req.form.get_field("category"));
         string location = cleanField(req.form.get_field("location"));
         string description = cleanField(req.form.get_field("description"));
@@ -662,7 +579,6 @@ int main(int argc, char** argv) {
         string id = nextComplaintId();
         string photoFile = "";
 
-        // The photo is optional. Same checks as the ID photo upload.
         if (req.is_multipart_form_data() && req.form.has_file("photo")) {
             httplib::FormData photo = req.form.get_file("photo");
             if (!photo.content.empty()) {
@@ -701,7 +617,6 @@ int main(int argc, char** argv) {
         res.set_redirect("/dashboard#recent-complaints");
     });
 
-    // ID PHOTO: shows the logged-in resident's own uploaded ID photo (never anyone else's).
     server.Get("/id-photo", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getSessionToken(req));
         if (login.empty()) {
@@ -724,22 +639,11 @@ int main(int argc, char** argv) {
         res.set_content(bytes.str(), contentType);
     });
 
-    // ===================== ADMIN (staff-only area) =====================
 
-    // Someone typing "/admin/" with a trailing slash should land in the same place
-    // as "/admin" (no slash), not see a 404. Send them to the real route.
     server.Get("/admin/", [](const httplib::Request& req, httplib::Response& res) {
         res.set_redirect("/admin");
     });
 
-    // "/admin" is no longer its own sign-in page — there's one shared sign-in
-    // form now (signin.html / POST /signin, above). This route only decides
-    // where to send a visitor: a signed-in staff member goes straight to the
-    // dashboard; anyone else (signed out, or signed in only as a resident) is
-    // sent to the shared sign-in page. This is also what stops a signed-out
-    // visitor, or a resident, from reaching anything admin-only by guessing
-    // the URL: there is no path through this check without a valid, active
-    // row in data/staff.txt.
     server.Get("/admin", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -750,17 +654,14 @@ int main(int argc, char** argv) {
         }
     });
 
-    // ADMIN DASHBOARD.
     server.Get("/admin/dashboard", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getAdminSessionToken(req));
         Staff staff;
         if (login.empty() || !findStaff(login, staff) || staff.status != "active") {
-            res.set_redirect("/signin.html");  // not signed in as staff
+            res.set_redirect("/signin.html");
             return;
         }
 
-        // Everything here is real: resident counts from data/users.txt, complaint
-        // numbers from data/complaints.txt.
         VerificationCounts counts = countResidentsByVerification();
 
         string notice = "";
@@ -774,7 +675,6 @@ int main(int argc, char** argv) {
             navBadge = "<span class=\"nav-count\">" + to_string(counts.pending) + "</span>";
         }
 
-        // Real complaint numbers, counted from data/complaints.txt.
         vector<Complaint> allComplaints = listAllComplaints();
         int pendingComplaints = 0, progressComplaints = 0, resolvedComplaints = 0;
         const char* categories[] = {"Garbage", "Noise", "Road and lighting", "Flooding", "Others"};
@@ -824,8 +724,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // COMPLAINTS LIST: real complaints from data/complaints.txt, newest first.
-    // The tabs/search/category filter on this page run in the browser (complaints.js).
     server.Get("/admin/complaints", [](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
         if (!requireStaff(req, res, staff)) return;
@@ -862,8 +760,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // EXPORT: every complaint as a CSV file that opens in Excel. (The ".csv" in the URL means
-    // the details route below, which only allows letters/digits/dashes, never matches it.)
     server.Get("/admin/complaints/export.csv", [](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
         if (!requireStaff(req, res, staff)) return;
@@ -881,8 +777,6 @@ int main(int argc, char** argv) {
         res.set_content(csv, "text/csv");
     });
 
-    // COMPLAINT DETAILS page. "([A-Za-z0-9\-]+)" matches one path segment like "AGAP-0005"
-    // (no slash in it), so this never matches the PDF/photo/status routes below.
     server.Get(R"(/admin/complaints/([A-Za-z0-9\-]+))", [](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
         if (!requireStaff(req, res, staff)) return;
@@ -925,7 +819,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // CHANGE A COMPLAINT'S STATUS (staff only).
     server.Post(R"(/admin/complaints/([A-Za-z0-9\-]+)/status)", [](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
         if (!requireStaff(req, res, staff)) return;
@@ -940,7 +833,6 @@ int main(int argc, char** argv) {
         res.set_redirect("/admin/complaints/" + id);
     });
 
-    // COMPLAINT PHOTO: the picture the resident attached (staff only).
     server.Get(R"(/admin/complaints/([A-Za-z0-9\-]+)/photo)", [](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
         if (!requireStaff(req, res, staff)) return;
@@ -951,7 +843,6 @@ int main(int argc, char** argv) {
             res.set_content("No photo.", "text/plain");
             return;
         }
-        // photoFile was made by this server (ID + .jpg/.png), but is cleaned again to be safe.
         string path = "../data/complaint_photos/" + safeFileName(complaint.photoFile);
         ifstream file(path, ios::binary);
         if (!file) {
@@ -965,9 +856,6 @@ int main(int argc, char** argv) {
         res.set_content(bytes.str(), isPng ? "image/png" : "image/jpeg");
     });
 
-    // COMPLAINT PDF REPORT: builds the PDF on the spot and sends it straight back.
-    // "inline" lets the browser preview it in a tab; the browser's own save
-    // button still downloads it, so one link covers both "view" and "download".
     server.Get(R"(/admin/complaints/([A-Za-z0-9\-]+)/report\.pdf)", [](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
         if (!requireStaff(req, res, staff)) return;
@@ -994,7 +882,6 @@ int main(int argc, char** argv) {
         reportData.residentAddress = known ? resident.address : "";
         reportData.location = complaint.location;
         reportData.description = complaint.description;
-        // The PDF writer can only embed JPEG photos, so a PNG is left out of the report.
         if (!complaint.photoFile.empty() && complaint.photoFile.size() > 4 &&
             complaint.photoFile.substr(complaint.photoFile.size() - 4) == ".jpg") {
             reportData.photoPath = "../data/complaint_photos/" + safeFileName(complaint.photoFile);
@@ -1016,8 +903,6 @@ int main(int argc, char** argv) {
         res.set_content(pdfBytes.str(), "application/pdf");
     });
 
-    // REPORTS and SETTINGS: not built yet (README, section 10). These keep the sidebar links
-    // from ending on a "not found" page.
     server.Get("/admin/reports", [](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
         if (!requireStaff(req, res, staff)) return;
@@ -1029,9 +914,6 @@ int main(int argc, char** argv) {
         showComingSoon(res, staff, "Settings", "Staff account management and barangay settings are planned for a later step.");
     });
 
-    // RESIDENTS LIST — real data, read straight from data/users.txt. Accounts
-    // that never submitted anything ("unverified") aren't shown here, since
-    // there's nothing for staff to review yet, same as the Figma.
     server.Get("/admin/residents", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -1078,7 +960,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // RESIDENT REVIEW page — one resident's full verification request.
     server.Get(R"(/admin/residents/([^/]+))", [](const httplib::Request& req, httplib::Response& res) {
         string staffLogin = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -1100,9 +981,6 @@ int main(int argc, char** argv) {
             ? "<span class=\"nav-count\">" + to_string(counts.pending) + "</span>"
             : "";
 
-        // Shows the real photo file's type and size if it exists, so staff can
-        // see what the resident actually uploaded (matches the Figma's
-        // "JPG, 2.1 MB" line), instead of a guess.
         string photoInfo = "No ID photo on file.";
         string jpgPath = "../data/ids/" + safeFileName(residentLogin) + ".jpg";
         string pngPath = "../data/ids/" + safeFileName(residentLogin) + ".png";
@@ -1144,7 +1022,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // APPROVE a resident's verification request.
     server.Post(R"(/admin/residents/([^/]+)/approve)", [](const httplib::Request& req, httplib::Response& res) {
         string staffLogin = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -1157,9 +1034,6 @@ int main(int argc, char** argv) {
         res.set_redirect("/admin/residents");
     });
 
-    // REJECT a resident's verification request. A reason is required —
-    // without one, this sends staff back to the review page with an error
-    // instead of silently rejecting with no explanation for the resident.
     server.Post(R"(/admin/residents/([^/]+)/reject)", [](const httplib::Request& req, httplib::Response& res) {
         string staffLogin = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -1178,11 +1052,6 @@ int main(int argc, char** argv) {
         res.set_redirect("/admin/residents");
     });
 
-    // RESIDENT ID PHOTO (admin view) — unlike the resident-facing /id-photo
-    // route, this one is keyed by a login in the URL rather than the
-    // visitor's own session, because staff need to view ANY resident's
-    // photo. It's still staff-only: the login check above guards this whole
-    // section, so a signed-out visitor or a resident can't reach it.
     server.Get(R"(/admin/residents/([^/]+)/id-photo)", [](const httplib::Request& req, httplib::Response& res) {
         string staffLogin = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -1207,8 +1076,6 @@ int main(int argc, char** argv) {
         res.set_content(bytes.str(), contentType);
     });
 
-    // ANNOUNCEMENTS — staff can view and post; residents see the newest 4 on
-    // their dashboard (see the /dashboard route above).
     server.Get("/admin/announcements", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -1250,7 +1117,6 @@ int main(int argc, char** argv) {
         res.set_content(page, "text/html");
     });
 
-    // POST a new announcement.
     server.Post("/admin/announcements/add", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -1270,7 +1136,7 @@ int main(int argc, char** argv) {
         }
 
         Announcement a;
-        a.id = to_string(time(nullptr));  // seconds since 1970 — unique enough for this project
+        a.id = to_string(time(nullptr));
         a.title = title;
         a.category = category;
         a.message = message;
@@ -1279,7 +1145,6 @@ int main(int argc, char** argv) {
         res.set_redirect("/admin/announcements");
     });
 
-    // DELETE an announcement.
     server.Post(R"(/admin/announcements/([^/]+)/delete)", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getAdminSessionToken(req));
         Staff staff;
@@ -1291,14 +1156,12 @@ int main(int argc, char** argv) {
         res.set_redirect("/admin/announcements");
     });
 
-    // STAFF SIGN OUT.
     server.Get("/admin/signout", [](const httplib::Request& req, httplib::Response& res) {
         deleteSession(getAdminSessionToken(req));
         res.set_header("Set-Cookie", "admin_session=; Path=/; Max-Age=0");
-        res.set_redirect("/");  // back to the home page (http://localhost:8080/), same as residents
+        res.set_redirect("/signin.html");
     });
 
-    // SIGN OUT: forget the session and clear the cookie.
     server.Get("/signout", [](const httplib::Request& req, httplib::Response& res) {
         deleteSession(getSessionToken(req));
         res.set_header("Set-Cookie", "session=; Path=/; Max-Age=0");

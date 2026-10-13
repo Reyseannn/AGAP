@@ -7,10 +7,8 @@
 #include <vector>
 using namespace std;
 
-// The file is found relative to the backend folder, the same way users.txt is.
 static const string STAFF_FILE = "../data/staff.txt";
 
-// Cuts one line of the file into its fields at every tab character.
 static vector<string> splitByTab(const string& line) {
     vector<string> fields;
     stringstream stream(line);
@@ -29,7 +27,7 @@ bool findStaff(const string& login, Staff& found) {
         cleanLine(line);
 
         vector<string> f = splitByTab(line);
-        if (f.size() != 6) continue;  // skip broken lines
+        if (f.size() != 6) continue;
 
         if (f[0] == login) {
             found.login = f[0];
@@ -51,7 +49,7 @@ bool addStaff(const Staff& staff) {
 
 void ensureDefaultAdmin() {
     ifstream check(STAFF_FILE);
-    if (check.good()) return;  // the file already exists, don't overwrite staff accounts
+    if (check.good()) return;
 
     Staff admin;
     admin.login = "admin@barangay.gov";

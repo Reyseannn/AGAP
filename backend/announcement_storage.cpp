@@ -5,13 +5,10 @@
 #include <sstream>
 using namespace std;
 
-// Found relative to the backend folder, like every other data file.
 static const string ANNOUNCEMENTS_FILE = "../data/announcements.txt";
 
-// Columns on each line: id, title, category, message, postedDate
 static const size_t FIELD_COUNT = 5;
 
-// Cuts one line at every tab, padding with empty fields if the line is short.
 static vector<string> splitByTab(const string& line) {
     vector<string> fields;
     stringstream stream(line);
@@ -27,7 +24,6 @@ static string toLine(const Announcement& a) {
     return a.id + '\t' + a.title + '\t' + a.category + '\t' + a.message + '\t' + a.postedDate;
 }
 
-// Reads the whole file in the order it was written (oldest first).
 static vector<Announcement> readAll() {
     vector<Announcement> all;
     ifstream file(ANNOUNCEMENTS_FILE);
@@ -59,7 +55,7 @@ bool addAnnouncement(const Announcement& announcement) {
 
 bool deleteAnnouncement(const string& id) {
     vector<Announcement> all = readAll();
-    ofstream out(ANNOUNCEMENTS_FILE, ios::trunc);  // trunc = replace the whole file
+    ofstream out(ANNOUNCEMENTS_FILE, ios::trunc);
     if (!out) return false;
     for (const Announcement& a : all) {
         if (a.id != id) out << toLine(a) << "\n";

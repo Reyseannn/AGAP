@@ -1,5 +1,3 @@
-// Shows the chosen file's name on the upload box instead of the default "Tap to upload" text.
-// This is only a visual convenience, so it's one small script rather than part of the C++ backend.
 const fileInput = document.getElementById("idphoto");
 const uploadText = document.getElementById("uploadText");
 

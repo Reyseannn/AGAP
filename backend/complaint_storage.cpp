@@ -8,7 +8,6 @@ using namespace std;
 
 static const string COMPLAINTS_FILE = "../data/complaints.txt";
 
-// Columns: id, login, category, location, description, status, filedDate, photoFile
 static const size_t FIELD_COUNT = 8;
 
 static vector<string> splitByTab(const string& line) {
@@ -59,7 +58,7 @@ bool addComplaint(const Complaint& c) {
 vector<Complaint> listComplaintsFor(const string& login) {
     vector<Complaint> mine;
     vector<Complaint> all = readAll();
-    for (size_t i = all.size(); i > 0; i--) {  // walk backwards = newest first
+    for (size_t i = all.size(); i > 0; i--) {
         if (all[i - 1].login == login) mine.push_back(all[i - 1]);
     }
     return mine;
@@ -92,7 +91,7 @@ bool updateComplaintStatus(const string& id, const string& newStatus) {
     }
     if (!changed) return false;
 
-    ofstream out(COMPLAINTS_FILE, ios::trunc);  // trunc = replace the whole file
+    ofstream out(COMPLAINTS_FILE, ios::trunc);
     if (!out) return false;
     for (const Complaint& c : all) {
         out << c.id << '\t' << c.login << '\t' << c.category << '\t' << c.location << '\t'

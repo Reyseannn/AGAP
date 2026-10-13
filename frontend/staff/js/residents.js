@@ -1,7 +1,3 @@
-// Filters the residents table by status tab. Simpler than complaints.js
-// (no search box or category dropdown here), but the same idea: hide rows
-// that don't match the selected tab. The rows themselves are real data,
-// built by the server — this script only shows/hides what's already there.
 
 const rows = Array.from(document.querySelectorAll("#residentsBody tr"));
 const tabs = document.querySelectorAll("#statusTabs .tab");

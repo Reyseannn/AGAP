@@ -9,7 +9,6 @@ void cleanLine(string& line) {
     if (line.size() >= 3 && line.compare(0, 3, "\xEF\xBB\xBF") == 0) line.erase(0, 3);
 }
 
-// True if the file has content and its last character is not a newline.
 static bool endsWithoutNewline(const string& path) {
     ifstream in(path, ios::binary);
     if (!in) return false;
@@ -25,12 +24,12 @@ bool appendLine(const string& path, const string& line) {
     filesystem::path file(path);
     if (file.has_parent_path()) {
         error_code ignored;
-        filesystem::create_directories(file.parent_path(), ignored);  // does nothing if it exists
+        filesystem::create_directories(file.parent_path(), ignored);
     }
 
     bool needsNewline = endsWithoutNewline(path);
 
-    ofstream out(path, ios::app);  // app = add to the end
+    ofstream out(path, ios::app);
     if (!out) {
         error_code ignored;
         cerr << "ERROR: could not write to " << filesystem::absolute(file, ignored).string() << endl;

@@ -1,7 +1,3 @@
-// Filters the complaints table by status tab, category dropdown, and search text.
-// The rows are real (built by the server from data/complaints.txt). This script only
-// shows/hides rows that were already sent, so the page filters instantly. A link such
-// as /admin/complaints?status=pending opens with that tab already selected.
 
 const rows = Array.from(document.querySelectorAll("#complaintsBody tr"));
 const tabs = document.querySelectorAll("#statusTabs .tab");
@@ -39,7 +35,6 @@ tabs.forEach(function (tab) {
   });
 });
 
-// Open with the tab named in the URL (?status=pending), if there is one.
 const wantedStatus = new URLSearchParams(window.location.search).get("status");
 tabs.forEach(function (tab) {
   if (wantedStatus && tab.dataset.status === wantedStatus) {

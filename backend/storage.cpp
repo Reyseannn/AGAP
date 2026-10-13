@@ -7,18 +7,10 @@
 using namespace std;
 
 
-// The file is found relative to the backend folder, the same way "../frontend" is.
 static const string USERS_FILE = "../data/users.txt";
 
-// The columns, in order, that each line of users.txt holds.
-static const size_t FIELD_COUNT = 9;  // login, fullName, phone, address, salt,
-                                       // passwordHash, verification, rejectionReason, idType
+static const size_t FIELD_COUNT = 9;
 
-// Cuts one line of the file into its fields at every tab character, then pads
-// it with empty fields up to FIELD_COUNT if it's short. Padding matters
-// because rejectionReason and idType were added to the file format after
-// some residents may have already signed up with the older 7-column format —
-// this lets those older rows keep working instead of being silently skipped.
 static vector<string> splitByTab(const string& line) {
     vector<string> fields;
     stringstream stream(line);
@@ -30,7 +22,6 @@ static vector<string> splitByTab(const string& line) {
     return fields;
 }
 
-// Turns one already-split, already-padded line into a User.
 static User fieldsToUser(const vector<string>& f) {
     User user;
     user.login = f[0];
@@ -45,7 +36,6 @@ static User fieldsToUser(const vector<string>& f) {
     return user;
 }
 
-// Turns a User back into one tab-separated line, ready to write to the file.
 static string userToLine(const User& user) {
     return user.login + '\t' + user.fullName + '\t' + user.phone + '\t' + user.address + '\t' +
            user.salt + '\t' + user.passwordHash + '\t' + user.verification + '\t' +
@@ -87,10 +77,6 @@ bool addUser(const User& user) {
     return appendLine(USERS_FILE, userToLine(user));
 }
 
-// Shared by saveVerificationRequest and setVerificationDecision: reads every
-// line, lets the given function change the one matching "login", and rewrites
-// the whole file. A text file can't edit a single line in place, so every
-// update means reading it all and writing it all back.
 static bool updateOneUser(const string& login, const std::function<void(User&)>& change) {
     ifstream in(USERS_FILE);
     if (!in) return false;
@@ -110,13 +96,13 @@ static bool updateOneUser(const string& login, const std::function<void(User&)>&
             lines.push_back(userToLine(user));
             found = true;
         } else {
-            lines.push_back(userToLine(fieldsToUser(f)));  // also upgrades old 7-column lines
+            lines.push_back(userToLine(fieldsToUser(f)));
         }
     }
     in.close();
     if (!found) return false;
 
-    ofstream out(USERS_FILE, ios::trunc);  // trunc = replace the whole file
+    ofstream out(USERS_FILE, ios::trunc);
     if (!out) return false;
     for (const string& l : lines) out << l << '\n';
     return true;
@@ -129,7 +115,7 @@ bool saveVerificationRequest(const string& login, const string& phone, const str
         user.address = address;
         user.idType = idType;
         user.verification = newStatus;
-        user.rejectionReason = "";  // a fresh request clears any old rejection reason
+        user.rejectionReason = "";
     });
 }
 

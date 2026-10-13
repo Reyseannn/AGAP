@@ -7,10 +7,7 @@
 #include <vector>
 using namespace std;
 
-// ---------- small helpers ----------
 
-// PDF text strings use ( ) and \ as special characters, so any that appear
-// in real text (an address, a description) must be escaped with a backslash.
 static string pdfEscape(const string& text) {
     string out;
     for (char c : text) {
@@ -20,9 +17,6 @@ static string pdfEscape(const string& text) {
     return out;
 }
 
-// Breaks a long line into shorter ones so it fits the page width. This counts
-// characters, not real font widths, which is simple but good enough for a
-// report made mostly of short fields and one paragraph of description.
 static vector<string> wrapText(const string& text, size_t maxChars) {
     vector<string> lines;
     string line, word;
@@ -37,11 +31,8 @@ static vector<string> wrapText(const string& text, size_t maxChars) {
     return lines;
 }
 
-// Reads a JPEG file's pixel width and height straight out of its header, by
-// scanning its markers for "start of frame" (0xFFC0-0xFFC3), which is where
-// JPEG stores its dimensions. Returns false if the file isn't a JPEG.
 static bool readJpegSize(const vector<unsigned char>& bytes, int& width, int& height) {
-    if (bytes.size() < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8) return false;  // not a JPEG
+    if (bytes.size() < 4 || bytes[0] != 0xFF || bytes[1] != 0xD8) return false;
 
     size_t pos = 2;
     while (pos + 4 <= bytes.size()) {
@@ -54,7 +45,7 @@ static bool readJpegSize(const vector<unsigned char>& bytes, int& width, int& he
             width  = (bytes[pos + 7] << 8) | bytes[pos + 8];
             return true;
         }
-        if (marker == 0xD8 || marker == 0xD9) { pos += 2; continue; }  // markers with no length field
+        if (marker == 0xD8 || marker == 0xD9) { pos += 2; continue; }
         if (pos + 4 > bytes.size()) return false;
         size_t segmentLength = (bytes[pos + 2] << 8) | bytes[pos + 3];
         pos += 2 + segmentLength;
@@ -63,8 +54,6 @@ static bool readJpegSize(const vector<unsigned char>& bytes, int& width, int& he
 }
 
 bool generateComplaintPdf(const string& outPath, const ComplaintReportData& data) {
-    // Read the photo file, if one was given, and find its real pixel size
-    // (needed so the image isn't drawn stretched or squashed).
     vector<unsigned char> photoBytes;
     int photoWidth = 0, photoHeight = 0;
     bool hasPhoto = false;
@@ -78,10 +67,6 @@ bool generateComplaintPdf(const string& outPath, const ComplaintReportData& data
         }
     }
 
-    // ---------- lay out the page's text and image ----------
-    // A PDF page's content stream is a short list of drawing instructions:
-    // "BT ... ET" shows one piece of text, "cm ... Do" draws an image.
-    // Everything here just builds that instruction list as a string.
     stringstream content;
     content << "BT /F1 16 Tf 50 740 Td (AGAP Complaint Report) Tj ET\n";
 
@@ -108,8 +93,6 @@ bool generateComplaintPdf(const string& outPath, const ComplaintReportData& data
     writeLine("What happened", 12);
     for (const string& line : wrapText(data.description, 85)) writeLine(line);
 
-    // The photo goes near the bottom, scaled to fit a fixed box while keeping
-    // its real width-to-height ratio (so it isn't stretched).
     if (hasPhoto) {
         y -= 10;
         writeLine("Photo", 12);
@@ -118,19 +101,14 @@ bool generateComplaintPdf(const string& outPath, const ComplaintReportData& data
         double scale = min(maxW / photoWidth, maxH / photoHeight);
         double drawW = photoWidth * scale;
         double drawH = photoHeight * scale;
-        double photoY = (y - 6) - drawH;  // y here is the top of the photo box
+        double photoY = (y - 6) - drawH;
 
         content << "q " << drawW << " 0 0 " << drawH << " 50 " << photoY << " cm /Im1 Do Q\n";
     }
 
     string contentStream = content.str();
 
-    // ---------- assemble the PDF's numbered objects ----------
-    // A PDF file is a list of numbered objects (1 0 obj ... endobj, 2 0 obj ...),
-    // plus a table at the end (the "xref table") that records exactly which
-    // byte each object starts at, so a PDF reader can jump straight to any of
-    // them instead of reading the whole file in order.
-    vector<string> objects;  // objects[i] is the body of object number (i + 1)
+    vector<string> objects;
 
     objects.push_back("<< /Type /Catalog /Pages 2 0 R >>");
     objects.push_back("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
@@ -147,9 +125,6 @@ bool generateComplaintPdf(const string& outPath, const ComplaintReportData& data
                        + contentStream + "\nendstream");
 
     if (hasPhoto) {
-        // /DCTDecode tells the PDF reader "these bytes are already a JPEG,
-        // just hand them to a JPEG decoder" — so the original file's bytes go
-        // in completely unchanged, with no re-encoding needed.
         string imageDict = "<< /Type /XObject /Subtype /Image /Width " + to_string(photoWidth) +
                             " /Height " + to_string(photoHeight) +
                             " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode "
@@ -160,7 +135,6 @@ bool generateComplaintPdf(const string& outPath, const ComplaintReportData& data
         objects.push_back(imageObj);
     }
 
-    // ---------- write the file, remembering where each object starts ----------
     ofstream out(outPath, ios::binary);
     if (!out) return false;
 

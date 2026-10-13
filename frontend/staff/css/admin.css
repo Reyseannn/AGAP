@@ -1,9 +1,4 @@
-    /* Admin-only styles. Loaded ON TOP OF ../css/style.css (the resident site's
-    stylesheet), so colors, buttons and form fields are reused, not duplicated.
-    This file only adds things the resident site doesn't need: the "Admin"
-    badge, and (from Step 2 on) the sidebar and topbar layout. */
 
-    /* ===== 1. SIGN-IN PAGE ===== */
     .admin-tag {
     font-size: 10px;
     font-weight: 700;
@@ -15,10 +10,6 @@
     vertical-align: middle;
     }
 
-    /* ===== 2. SHARED ADMIN LAYOUT (sidebar + topbar) =====
-    Every logged-in admin page (dashboard, complaints, residents, ...) uses this
-    same shell: a fixed navy sidebar on the left, a white topbar, and a content
-    area. Only the <main class="admin-content"> part changes page to page. */
     body.admin-body { margin: 0; background: var(--gray-bg); min-height: 100vh; }
     .admin-shell { display: flex; min-height: 100vh; }
 
@@ -52,7 +43,6 @@
 
     .admin-content { padding: 24px 28px 48px; }
 
-    /* ===== 3. DASHBOARD PIECES ===== */
     .notice-row { background: #fdecea; border: 1px solid #f5c2bd; color: #b3261e; border-radius: 8px;
     padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 8px; margin-bottom: 20px; font-size: 14px; }
@@ -88,12 +78,10 @@
     .cat-bar-fill { height: 100%; background: var(--blue); border-radius: 4px; }
     .cat-bar-row .cat-num { width: 18px; text-align: right; color: var(--text-muted); flex-shrink: 0; }
 
-    /* ===== 3b. COMPLAINT DETAILS ===== */
     .admin-topbar .back-link { display: block; font-size: 12px; font-weight: 600; color: var(--blue); margin-bottom: 4px; }
     .admin-topbar h1 { margin-bottom: 2px; }
     .complaint-photo { width: 100%; max-width: 320px; border-radius: 8px; border: 1px solid var(--border); display: block; }
 
-    /* ===== 4. COMPLAINTS LIST (tabs, search, filter) ===== */
     .complaints-toolbar { display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
     .status-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -122,7 +110,6 @@
     .toolbar-filters input { min-width: 0; width: 100%; }
     .toolbar-filters { width: 100%; }
     }
-    /* Announcements page: form fields besides plain inputs, and the posted list. */
     .field select, .field textarea { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 14px; color: var(--navy); }
     .announcement-row { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid var(--border); }
     .announcement-row:last-child { border-bottom: none; }

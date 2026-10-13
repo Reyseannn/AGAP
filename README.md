@@ -142,6 +142,10 @@ page if you're not signed in as staff)
    "View / Download PDF report".
 6. Post an announcement under Announcements → it shows on the resident dashboard.
 7. Sign out, visit `/admin` directly → should bounce to `/signin.html`.
+8. As a verified resident, the three banners at the top of the dashboard (pending / rejected /
+   "Account created") must be hidden; for an unverified, pending or rejected resident only the
+   matching banner shows. Sign out and in again — the state stays the same (it is read from
+   `data/users.txt` on every dashboard request).
 
 ---
 
@@ -449,3 +453,24 @@ Causes found by reproducing it:
 Fix: `file_util.cpp` (`appendLine`, `cleanLine`) is used by every storage file; `main()` creates
 `data/` and finds the backend folder; failures print `ERROR: could not write to <full path>`.
 **Never edit the data files by hand while the server is running, and keep the final newline.**
+
+---
+
+## 13. Bugs: wrong login cookie, banners always visible, admin sign-out page — fixed
+
+- **Cookie mix-up.** `getCookie("session")` also matched inside `admin_session=...`, so a browser
+  holding both cookies sent the staff token as the resident session. `getCookie()` now splits on
+  `;` and matches the exact cookie name.
+- **Verification banners never hid.** `.banner { display:flex }` came later in `style.css` than
+  `[data-show] { display:none }` with the same specificity, so every banner showed for everyone.
+  The rules are now `body [data-show]` (hidden) and `body.state-... [data-show~="..."]` (shown).
+  The state class comes from the stored `verification` value via `stateClassFor()` in `main.cpp`
+  (`unverified` → new, `pending`, `rejected`, `verified`; anything unknown falls back to new).
+- **Admin sign-out.** `/admin/signout` clears the `admin_session` cookie, deletes the token on the
+  server, and redirects to `/signin.html` (the shared sign-in page). Resident `/signout` still
+  goes to `/`. After sign-out, `/admin/...` pages redirect to `/signin.html` and an old
+  admin token is rejected.
+- **Notes.** `backend/named_list_storage.h/.cpp` and `frontend/staff/settings_admin.html` are
+  empty placeholders and are not part of the build. Code comments were removed from the source
+  files; this README is where explanations live.
+
