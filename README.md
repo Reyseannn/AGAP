@@ -26,7 +26,7 @@ community) complaint-reporting website.
 - Storage: **plain tab-separated `.txt` files**, not a database. **No SQLite —
   the project owner explicitly does not want it.**
 - Style: `using namespace std;` is used throughout (the owner's explicit
-  preference), code is kept simple and heavily commented, no frameworks.
+  preference), code is kept simple and beginner-friendly, no frameworks.
 
 The person running this project is a **beginner programmer** and needs to be
 able to explain and defend every part of this code. Keep explanations simple,
@@ -44,7 +44,8 @@ AGAP/
 ├── backend/
 │   ├── main.cpp                       All routes. The biggest file — see section 5.
 │   ├── storage.h / storage.cpp        Resident accounts (data/users.txt)
-│   ├── staff_storage.h / .cpp         Staff/admin accounts (data/staff.txt)
+│   ├── staff_storage.h / .cpp        Staff/admin accounts (data/staff.txt)
+│   ├── named_list_storage.h / .cpp  Settings lists (data/teams.txt, data/puroks.txt)
 │   ├── auth.h / auth.cpp              Password hashing + login sessions (shared by
 │   │                                   residents AND staff, different cookie names)
 │   ├── complaint_storage.h / .cpp     Complaints (data/complaints.txt) — filing, listing,
@@ -80,7 +81,8 @@ AGAP/
         ├── residents_admin.html
         ├── resident_review_admin.html     Approve/Reject (reason required to reject)
         ├── announcements_admin.html
-        ├── coming_soon_admin.html         placeholder for Reports and Settings
+        ├── settings_admin.html             Administrator-only staff and list settings
+        ├── coming_soon_admin.html         placeholder for unfinished Reports
         ├── css/admin.css                  built ON TOP OF ../css/style.css
         ├── js/complaints.js               client-side tabs/search/filter for the table
         └── js/residents.js                client-side status-tab filter
@@ -125,7 +127,7 @@ Email:    admin@barangay.gov
 Password: admin123
 ```
 
-Change this once a real staff-management UI exists (Settings, not yet built — see section 10).
+Change it after sign-in in Settings → Staff accounts by resetting your own password.
 
 **Open the site:** `http://localhost:8080`
 **Admin area:** `http://localhost:8080/admin` (redirects to the shared sign-in
@@ -217,7 +219,7 @@ HTML with no JavaScript.
     can file; others are sent to `/verify`. Saves category, location, description and an
     optional JPG/PNG photo (max 5 MB, in `data/complaint_photos/`). Residents see their own
     complaints on the dashboard and at `/my-complaints`.
-13. Reports and Settings — sidebar links go to a "Coming soon" page (not built, section 10).
+13. Settings — administrator-only staff account and teams/puroks management is available at `/admin/settings`. Reports remains a placeholder.
 
 ### Login architecture (important — changed partway through)
 10. Originally residents and staff had **two completely separate login
@@ -248,14 +250,7 @@ What `POST /signin` does, in order:
    from the error whether an email exists, or whether it's a staff or resident
    account.
 
-**Why staff accounts can't be self-granted:** `data/staff.txt` is only ever
-written to by the one-time startup seeding in `staff_storage.cpp`
-(`ensureDefaultAdmin()`). The public `/signup` route only ever writes to
-`data/users.txt`. There is currently **no admin UI to create more staff
-accounts** — that's part of the unbuilt Settings page (section 10). Until
-then, more staff accounts would have to be added by hand-editing
-`data/staff.txt` in the same tab-separated format `addStaff()` writes, or
-by writing one, using `makeSalt()` / `hashPassword()` from `auth.cpp`.
+**Why staff accounts can't be self-granted:** `data/staff.txt` is only written by startup seeding or the administrator-only Settings page. The public `/signup` route writes only to `data/users.txt`. Settings checks for an active staff session with the `admin` role before allowing staff changes. New staff emails are checked against both resident and staff accounts.
 
 **An earlier design considered identifying admins by email domain** (e.g.
 anything ending in `admin.gov`). **This was deliberately rejected** — since
@@ -397,10 +392,7 @@ zeros and "No complaints have been filed yet" until residents file some.
 
 **Not built yet:**
 - Reports page (date/category filters, resolution stats, export). Sidebar link shows "Coming soon".
-- Settings — staff account management (add/deactivate/reset password), teams & puroks,
-  categories, barangay info — **and confirmation pop-ups** before destructive actions
-  (reject, suspend, delete, deactivate). Reject and Delete announcements already work and are
-  guarded server-side; what's missing is the confirmation *dialog* the Figma shows.
+- Settings: administrators can add staff accounts, reset passwords, activate/deactivate staff, and manage response-team and purok name lists. Deactivation and list removal require confirmation. Teams and puroks are stored for future use but are not yet connected to complaint assignment or resident address fields. Categories and barangay info tabs remain placeholders.
 - Editing an existing announcement (only post + delete exist).
 - Assigning complaints to staff/teams, and notes/comments on a complaint.
 - Residents can't open a single complaint (only a list); no notification when status changes
@@ -408,8 +400,8 @@ zeros and "No complaints have been filed yet" until residents file some.
 
 **Smaller loose ends:**
 - No password-reset flow for residents (removed early on, by the project owner's choice).
-- No way to add staff accounts except by hand-editing `data/staff.txt` or waiting for Settings.
-- The starter admin password (`admin123`) should be changed once there's a way to do it.
+- Settings does not yet edit complaint categories or barangay contact information.
+- The starter admin password is `admin123` on a fresh data folder; reset it in Settings after first sign-in.
 - Complaint IDs are `AGAP-` + (number of complaints + 1). Complaints are never deleted, so IDs
   stay unique; if deleting is ever added, switch to a counter.
 - `data/users.txt` is 9 columns: `login, fullName, phone, address, salt, passwordHash,
@@ -423,7 +415,7 @@ zeros and "No complaints have been filed yet" until residents file some.
   early `Data/users.txt`.
 
 **If you're picking this up fresh:** ask the project owner which step they want next —
-likely Reports or Settings (with the confirmation dialogs as a quick first win).
+likely the Reports page, category/barangay settings, or connecting teams and puroks to complaints and resident addresses.
 
 ---
 
@@ -470,7 +462,5 @@ Fix: `file_util.cpp` (`appendLine`, `cleanLine`) is used by every storage file; 
   server, and redirects to `/signin.html` (the shared sign-in page). Resident `/signout` still
   goes to `/`. After sign-out, `/admin/...` pages redirect to `/signin.html` and an old
   admin token is rejected.
-- **Notes.** `backend/named_list_storage.h/.cpp` and `frontend/staff/settings_admin.html` are
-  empty placeholders and are not part of the build. Code comments were removed from the source
-  files; this README is where explanations live.
+- **Notes.** `backend/named_list_storage.h/.cpp` store the Settings response-team and purok lists. `frontend/staff/settings_admin.html` is the administrator-only Settings page. Source-code comments remain removed; explanations live here.
 

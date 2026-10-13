@@ -2,6 +2,7 @@
 #include "auth.h"
 #include "storage.h"
 #include "staff_storage.h"
+#include "named_list_storage.h"
 #include "pdf_report.h"
 #include "announcement_storage.h"
 #include "complaint_storage.h"
@@ -121,6 +122,9 @@ static string residentStatusBadgeClass(const string& verification) {
     if (verification == "rejected") return "badge-rejected";
     return "badge-pending";
 }
+
+static const string TEAMS_FILE = "../data/teams.txt";
+static const string PUROKS_FILE = "../data/puroks.txt";
 
 static string todayFormatted() {
     time_t now = time(nullptr);
@@ -908,10 +912,267 @@ int main(int argc, char** argv) {
         if (!requireStaff(req, res, staff)) return;
         showComingSoon(res, staff, "Reports", "Complaint reports with date and category filters are planned for a later step.");
     });
-    server.Get("/admin/settings", [](const httplib::Request& req, httplib::Response& res) {
+    auto requireAdminRole = [&](const httplib::Request& req, httplib::Response& res, Staff& staffOut) -> bool {
+        string login = loginFromSession(getAdminSessionToken(req));
+        if (login.empty() || !findStaff(login, staffOut) || staffOut.status != "active") {
+            res.set_redirect("/signin.html");
+            return false;
+        }
+        if (staffOut.role != "admin") {
+            res.status = 403;
+            res.set_content("<h1>Administrator only</h1><p>Your staff account doesn't have permission "
+                             "to view this page.</p><p><a href=\"/admin/dashboard\">Back to dashboard</a></p>",
+                             "text/html");
+            return false;
+        }
+        return true;
+    };
+
+    
+    server.Get("/admin/settings", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
-        if (!requireStaff(req, res, staff)) return;
-        showComingSoon(res, staff, "Settings", "Staff account management and barangay settings are planned for a later step.");
+        if (!requireAdminRole(req, res, staff)) return;
+
+        string tab = req.get_param_value("tab");
+        if (tab.empty()) tab = "staff";
+
+        string tabContent;
+
+        if (tab == "staff") {
+            string rows = "";
+            for (const Staff& s : listAllStaff()) {
+                bool isSelf = (s.login == staff.login);
+                string toggleAction = (s.status == "active") ? "deactivate" : "activate";
+                string toggleLabel = (s.status == "active") ? "Deactivate" : "Activate";
+                string confirmAttr = (toggleAction == "deactivate")
+                    ? " onsubmit=\"return confirm('Deactivate this account? They can no longer sign in. You can activate it again later.')\""
+                    : "";
+                string actionsHtml =
+                    "<form method=\"post\" action=\"/admin/settings/staff/" + escapeHtml(s.login) + "/reset-password\" "
+                    "style=\"display:inline-flex;gap:6px;align-items:center;margin-right:10px\" "
+                    "onsubmit=\"return confirm('Reset this staff account password?')\">"
+                    "<input type=\"password\" name=\"newPassword\" placeholder=\"New password\" required minlength=\"6\" maxlength=\"128\" "
+                    "style=\"width:130px;padding:5px 8px;font-size:12px;border:1px solid var(--border);border-radius:4px\">"
+                    "<button type=\"submit\" class=\"link-button\">Reset</button></form>";
+                if (isSelf) {
+                    actionsHtml += " <span class=\"muted\">(you)</span>";
+                } else {
+                    actionsHtml +=
+                        "<form method=\"post\" action=\"/admin/settings/staff/" + escapeHtml(s.login) + "/" + toggleAction + "\" "
+                        "style=\"display:inline\"" + confirmAttr + ">"
+                        "<button type=\"submit\" class=\"link-button\">" + toggleLabel + "</button></form>";
+                }
+
+                rows += "<tr><td><span class=\"avatar\" style=\"width:28px;height:28px;font-size:11px\">" +
+                        escapeHtml(initialsOf(s.fullName)) + "</span> " + escapeHtml(s.fullName) + "</td>"
+                        "<td>" + escapeHtml(s.login) + "</td>"
+                        "<td>" + escapeHtml(s.role == "admin" ? "Administrator" : "Staff") + "</td>"
+                        "<td><span class=\"badge " + (s.status == "active" ? "badge-resolved" : "badge-rejected") +
+                        "\">" + escapeHtml(s.status == "active" ? "Active" : "Inactive") + "</span></td>"
+                        "<td>" + actionsHtml + "</td></tr>";
+            }
+
+            string addError = "";
+            if (req.get_param_value("error") == "missing_fields") {
+                addError = "<div class=\"alert-error\">Please fill in every field.</div>";
+            } else if (req.get_param_value("error") == "duplicate") {
+                addError = "<div class=\"alert-error\">That email is already registered.</div>";
+            } else if (req.get_param_value("error") == "save_failed") {
+                addError = "<div class=\"alert-error\">Could not save the requested change.</div>";
+            } else if (req.get_param_value("error") == "invalid_password") {
+                addError = "<div class=\"alert-error\">Password must be 6 to 128 characters.</div>";
+            }
+
+            tabContent =
+                "<div class=\"admin-panel\"><h3>Staff accounts</h3>"
+                "<table class=\"admin-table\"><thead><tr><th>Name</th><th>Email</th><th>Role</th>"
+                "<th>Status</th><th>Actions</th></tr></thead><tbody>" + rows + "</tbody></table>"
+                "<p class=\"table-note\">Only the administrator can add, deactivate or reset staff accounts. "
+                "Staff sign in with the email and temporary password the administrator sets.</p></div>"
+
+                "<div class=\"admin-panel\">" + addError + "<h3>Add staff</h3>"
+                "<form method=\"post\" action=\"/admin/settings/staff/add\">"
+                "<div class=\"field\"><label>Full name</label><input type=\"text\" name=\"fullname\" required></div>"
+                "<div class=\"field\"><label>Email</label><input type=\"email\" name=\"login\" required></div>"
+                "<div class=\"field\"><label>Temporary password</label>"
+                "<input type=\"password\" name=\"password\" minlength=\"6\" placeholder=\"At least 6 characters\" required></div>"
+                "<div class=\"field\"><label>Role</label><select name=\"role\">"
+                "<option value=\"staff\">Staff</option><option value=\"admin\">Administrator</option></select></div>"
+                "<button type=\"submit\" class=\"btn btn-blue btn-full\">Add staff</button></form></div>";
+
+        } else if (tab == "teams") {
+            string teamRows = "";
+            for (const string& team : listNamedItems(TEAMS_FILE)) {
+                teamRows += "<div class=\"attention-item\"><span>" + escapeHtml(team) + "</span>"
+                            "<form method=\"post\" action=\"/admin/settings/teams/remove\" onsubmit=\"return confirm('Remove this team?')\">"
+                            "<input type=\"hidden\" name=\"name\" value=\"" + escapeHtml(team) + "\">"
+                            "<button type=\"submit\" class=\"link-button\">Remove</button></form></div>";
+            }
+            if (teamRows.empty()) teamRows = "<p class=\"muted\">No response teams yet.</p>";
+
+            string purokRows = "";
+            for (const string& purok : listNamedItems(PUROKS_FILE)) {
+                purokRows += "<div class=\"attention-item\"><span>" + escapeHtml(purok) + "</span>"
+                             "<form method=\"post\" action=\"/admin/settings/puroks/remove\" onsubmit=\"return confirm('Remove this purok?')\">"
+                             "<input type=\"hidden\" name=\"name\" value=\"" + escapeHtml(purok) + "\">"
+                             "<button type=\"submit\" class=\"link-button\">Remove</button></form></div>";
+            }
+            if (purokRows.empty()) purokRows = "<p class=\"muted\">No puroks yet.</p>";
+
+            tabContent =
+                "<div class=\"admin-grid\"><section><div class=\"admin-panel\"><h3>Response teams</h3>" + teamRows +
+                "<form method=\"post\" action=\"/admin/settings/teams/add\" style=\"display:flex;gap:8px;margin-top:14px\">"
+                "<input type=\"text\" name=\"name\" placeholder=\"Team name\" required style=\"flex:1\">"
+                "<button type=\"submit\" class=\"btn btn-blue\">Add team</button></form></div></section>"
+                "<aside><div class=\"admin-panel\"><h3>Puroks</h3>" + purokRows +
+                "<form method=\"post\" action=\"/admin/settings/puroks/add\" style=\"display:flex;gap:8px;margin-top:14px\">"
+                "<input type=\"text\" name=\"name\" placeholder=\"Purok name\" required style=\"flex:1\">"
+                "<button type=\"submit\" class=\"btn btn-blue\">Add purok</button></form></div></aside></div>"
+                "<p class=\"sample-tag\" style=\"display:block;margin-top:14px\">These lists are stored for "
+                "future use. They aren't connected to the complaint \"Assign to\" field or address fields yet.</p>";
+
+        } else {
+            string label = (tab == "categories") ? "Categories" : "Barangay info";
+            tabContent = "<div class=\"admin-panel\"><h3>" + label + "</h3>"
+                         "<p class=\"muted\">This tab wasn't built in this session. Complaint categories "
+                         "are currently fixed in the code (Garbage, Noise, Road and lighting, Flooding, Others) "
+                         "rather than editable here, and the barangay's contact details are hardcoded in the "
+                         "footer of each page rather than stored and editable.</p></div>";
+        }
+
+        VerificationCounts counts = countResidentsByVerification();
+        string navBadge = (counts.pending > 0)
+            ? "<span class=\"nav-count\">" + to_string(counts.pending) + "</span>"
+            : "";
+
+        string page = readFile("../frontend/staff/settings_admin.html");
+        page = replaceAll(page, "{{staffName}}", escapeHtml(staff.fullName));
+        page = replaceAll(page, "{{staffInitials}}", escapeHtml(initialsOf(staff.fullName)));
+        page = replaceAll(page, "{{residentsNavBadge}}", navBadge);
+        page = replaceAll(page, "{{tabStaffActive}}", tab == "staff" ? "active" : "");
+        page = replaceAll(page, "{{tabTeamsActive}}", tab == "teams" ? "active" : "");
+        page = replaceAll(page, "{{tabCategoriesActive}}", tab == "categories" ? "active" : "");
+        page = replaceAll(page, "{{tabInfoActive}}", tab == "info" ? "active" : "");
+        page = replaceAll(page, "{{tabContent}}", tabContent);
+        res.set_content(page, "text/html");
+    });
+
+    
+    server.Post("/admin/settings/staff/add", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireAdminRole(req, res, staff)) return;
+
+        string fullName = cleanField(req.get_param_value("fullname"));
+        string login = toLower(cleanField(req.get_param_value("login")));
+        string password = req.get_param_value("password");
+        string role = req.get_param_value("role");
+        if (role != "admin") role = "staff";
+
+        if (fullName.empty() || login.empty() || password.length() < 6) {
+            res.set_redirect("/admin/settings?tab=staff&error=missing_fields");
+            return;
+        }
+        Staff existing;
+        User existingResident;
+        size_t at = login.find('@');
+        if (at == string::npos || at == 0 || at + 1 >= login.size()) {
+            res.set_redirect("/admin/settings?tab=staff&error=missing_fields");
+            return;
+        }
+        if (findStaff(login, existing) || findUser(login, existingResident)) {
+            res.set_redirect("/admin/settings?tab=staff&error=duplicate");
+            return;
+        }
+
+        Staff newStaff;
+        newStaff.login = login;
+        newStaff.fullName = fullName;
+        newStaff.role = role;
+        newStaff.salt = makeSalt();
+        newStaff.passwordHash = hashPassword(newStaff.salt, password);
+        newStaff.status = "active";
+        if (!addStaff(newStaff)) {
+            res.set_redirect("/admin/settings?tab=staff&error=save_failed");
+            return;
+        }
+        res.set_redirect("/admin/settings?tab=staff");
+    });
+
+    
+    server.Post(R"(/admin/settings/staff/([^/]+)/reset-password)", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireAdminRole(req, res, staff)) return;
+
+        string targetLogin = req.matches[1];
+        string newPassword = req.get_param_value("newPassword");
+        if (newPassword.length() < 6 || newPassword.length() > 128) {
+            res.set_redirect("/admin/settings?tab=staff&error=invalid_password");
+            return;
+        }
+        string salt = makeSalt();
+        if (!setStaffPassword(targetLogin, salt, hashPassword(salt, newPassword))) {
+            res.set_redirect("/admin/settings?tab=staff&error=save_failed");
+            return;
+        }
+        res.set_redirect("/admin/settings?tab=staff");
+    });
+
+    
+    
+    
+    
+    server.Post(R"(/admin/settings/staff/([^/]+)/deactivate)", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireAdminRole(req, res, staff)) return;
+        string targetLogin = req.matches[1];
+        if (targetLogin != staff.login && !setStaffStatus(targetLogin, "inactive")) {
+            res.set_redirect("/admin/settings?tab=staff&error=save_failed");
+            return;
+        }
+        res.set_redirect("/admin/settings?tab=staff");
+    });
+    server.Post(R"(/admin/settings/staff/([^/]+)/activate)", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireAdminRole(req, res, staff)) return;
+        if (!setStaffStatus(req.matches[1], "active")) {
+            res.set_redirect("/admin/settings?tab=staff&error=save_failed");
+            return;
+        }
+        res.set_redirect("/admin/settings?tab=staff");
+    });
+
+    
+    server.Post("/admin/settings/teams/add", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireAdminRole(req, res, staff)) return;
+        string name = cleanField(req.get_param_value("name"));
+        if (!name.empty() && !addNamedItem(TEAMS_FILE, name)) {
+            res.set_redirect("/admin/settings?tab=teams&error=save_failed");
+            return;
+        }
+        res.set_redirect("/admin/settings?tab=teams");
+    });
+    server.Post("/admin/settings/teams/remove", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireAdminRole(req, res, staff)) return;
+        removeNamedItem(TEAMS_FILE, req.get_param_value("name"));
+        res.set_redirect("/admin/settings?tab=teams");
+    });
+    server.Post("/admin/settings/puroks/add", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireAdminRole(req, res, staff)) return;
+        string name = cleanField(req.get_param_value("name"));
+        if (!name.empty() && !addNamedItem(PUROKS_FILE, name)) {
+            res.set_redirect("/admin/settings?tab=teams&error=save_failed");
+            return;
+        }
+        res.set_redirect("/admin/settings?tab=teams");
+    });
+    server.Post("/admin/settings/puroks/remove", [&requireAdminRole](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireAdminRole(req, res, staff)) return;
+        removeNamedItem(PUROKS_FILE, req.get_param_value("name"));
+        res.set_redirect("/admin/settings?tab=teams");
     });
 
     server.Get("/admin/residents", [](const httplib::Request& req, httplib::Response& res) {

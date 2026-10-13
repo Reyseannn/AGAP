@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings – AGAP Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/staff/css/admin.css">
+</head>
+<body class="admin-body">
+<div class="admin-shell">
+
+  <aside class="admin-sidebar">
+    <a href="/admin/dashboard" class="logo">
+      <span class="logo-name">AGAP <span class="admin-tag">Admin</span></span>
+      <span class="logo-sub">Barangay Sample</span>
+    </a>
+    <nav class="admin-nav">
+      <a href="/admin/dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="/admin/complaints">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v14H8l-4 4V4z"/></svg>
+        Complaints
+      </a>
+      <a href="/admin/residents">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="18" cy="9" r="2.5"/><path d="M15.5 14c2.6.3 4.5 2.4 4.5 6"/></svg>
+        Residents
+        {{residentsNavBadge}}
+      </a>
+      <a href="/admin/announcements">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h3l5 4V6L7 10H4z"/><path d="M16 9a3 3 0 0 1 0 6"/></svg>
+        Announcements
+      </a>
+      <a href="/admin/reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>
+        Reports
+      </a>
+      <a href="/admin/settings" class="active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        Settings
+      </a>
+    </nav>
+    <div class="admin-sidebar-foot">
+      <span class="avatar">{{staffInitials}}</span>
+      <div>
+        <strong style="color:#fff">{{staffName}}</strong><br>
+        <a href="/admin/signout">Sign out</a>
+      </div>
+    </div>
+  </aside>
+
+  <div class="admin-main">
+    <header class="admin-topbar">
+      <div>
+        <h1>Settings</h1>
+        <p class="muted">Administrator only</p>
+      </div>
+    </header>
+
+    <main class="admin-content">
+      <div class="status-tabs" style="margin-bottom:18px">
+        <a href="/admin/settings?tab=staff" class="tab {{tabStaffActive}}">Staff accounts</a>
+        <a href="/admin/settings?tab=teams" class="tab {{tabTeamsActive}}">Teams and puroks</a>
+        <a href="/admin/settings?tab=categories" class="tab {{tabCategoriesActive}}">Categories</a>
+        <a href="/admin/settings?tab=info" class="tab {{tabInfoActive}}">Barangay info</a>
+      </div>
+
+      {{tabContent}}
+    </main>
+  </div>
+</div>
+</body>
+</html>
