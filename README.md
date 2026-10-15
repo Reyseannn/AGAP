@@ -123,8 +123,7 @@ The very first time it runs, if `data/staff.txt` doesn't exist yet, the server c
 starter admin account and prints the password **to the console only**:
 
 ```
-Email:    admin@barangay.gov
-Password: admin123
+
 ```
 
 Change it after sign-in in Settings → Staff accounts by resetting your own password.
