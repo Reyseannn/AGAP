@@ -181,6 +181,23 @@ static string stateClassFor(const string& verification) {
     return "state-new";
 }
 
+static string verificationBannerFor(const string& verification, const string& rejectionReason) {
+    if (verification == "pending") {
+        return "<div class=\"banner banner-warn\">Your verification request is waiting for admin review. "
+               "You can file complaints after it is approved.</div>";
+    }
+    if (verification == "verified") {
+        return "<div class=\"banner banner-success\">Your account is approved. You can file complaints.</div>";
+    }
+    if (verification == "rejected") {
+        string reason = rejectionReason.empty() ? "Please upload a clearer photo of your ID." : rejectionReason;
+        return "<div class=\"banner banner-error\"><span>Verification was not approved: " +
+               escapeHtml(reason) + "</span> <a href=\"/verify\">Upload your ID again</a></div>";
+    }
+    return "<div class=\"banner banner-warn\">Verify your account by submitting your details and ID. "
+           "An admin must approve it before you can file a complaint.</div>";
+}
+
 static string safeFileName(const string& text) {
     string result;
     for (char c : text) {
@@ -385,6 +402,8 @@ int main(int argc, char** argv) {
         page = replaceAll(page, "{{address}}", escapeHtml(addressDisplay));
         page = replaceAll(page, "{{rejectionReason}}", escapeHtml(rejectionMessage));
         page = replaceAll(page, "{{state}}", stateClassFor(user.verification));
+        page = replaceAll(page, "{{verificationBanner}}",
+                          verificationBannerFor(user.verification, user.rejectionReason));
 
         vector<Announcement> announcements = listAnnouncements();
         string announcementRows = "";
@@ -419,6 +438,10 @@ int main(int argc, char** argv) {
             res.set_redirect("/signin.html");
             return;
         }
+        if (user.verification == "verified") {
+            res.set_redirect("/dashboard");
+            return;
+        }
         showVerifyPage(res, user, "");
     });
 
@@ -427,6 +450,10 @@ int main(int argc, char** argv) {
         User user;
         if (login.empty() || !findUser(login, user)) {
             res.set_redirect("/signin.html");
+            return;
+        }
+        if (user.verification == "verified") {
+            res.set_redirect("/dashboard");
             return;
         }
 
@@ -485,7 +512,10 @@ int main(int argc, char** argv) {
         out.write(photo.content.data(), photo.content.size());
         out.close();
 
-        saveVerificationRequest(login, phone, address, idType, "pending");
+        if (!saveVerificationRequest(login, phone, address, idType, "pending")) {
+            showVerifyPage(res, user, "Could not save your verification request. Please try again.");
+            return;
+        }
         res.set_redirect("/dashboard");
     });
 
