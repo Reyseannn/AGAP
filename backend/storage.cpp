@@ -111,10 +111,12 @@ static bool updateOneUser(const string& login, const std::function<void(User&)>&
 bool saveVerificationRequest(const string& login, const string& phone, const string& address,
                               const string& idType, const string& newStatus) {
     return updateOneUser(login, [&](User& user) {
+        // A submitted request must never demote a resident already approved by staff.
+        if (user.verification == "verified" || newStatus != "pending") return;
         user.phone = phone;
         user.address = address;
         user.idType = idType;
-        user.verification = newStatus;
+        user.verification = "pending";
         user.rejectionReason = "";
     });
 }
