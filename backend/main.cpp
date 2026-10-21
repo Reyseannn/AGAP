@@ -12,6 +12,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <map>
+#include <set>
 #include <sstream>
 using namespace std;
 
@@ -216,6 +218,7 @@ static void showComplaintPage(httplib::Response& res, const User& user, const st
     page = replaceAll(page, "{{errorBanner}}", banner);
     page = replaceAll(page, "{{fullname}}", escapeHtml(user.fullName));
     page = replaceAll(page, "{{phone}}", escapeHtml(user.phone));
+    page = replaceAll(page, "{{initials}}", escapeHtml(initialsOf(user.fullName)));
     res.set_content(page, "text/html");
 }
 
@@ -242,6 +245,41 @@ static string csvCell(string text) {
     return "\"" + text + "\"";
 }
 
+static string monthKeyFor(const string& filedDate) {
+    static const vector<string> months = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    if (filedDate.size() < 9) return "";
+    string shortMonth = filedDate.substr(0, 3);
+    int month = 0;
+    for (size_t i = 0; i < months.size(); ++i) if (months[i] == shortMonth) month = (int)i + 1;
+    if (!month) return "";
+    size_t comma = filedDate.find(',');
+    if (comma == string::npos || comma + 2 >= filedDate.size()) return "";
+    string year = filedDate.substr(comma + 2);
+    stringstream key;
+    key << year << '-';
+    if (month < 10) key << '0';
+    key << month;
+    return key.str();
+}
+
+static string currentMonthKey() {
+    time_t now = time(nullptr);
+    tm local = *localtime(&now);
+    stringstream key;
+    key << local.tm_year + 1900 << '-';
+    if (local.tm_mon + 1 < 10) key << '0';
+    key << local.tm_mon + 1;
+    return key.str();
+}
+
+static string monthLabel(const string& key) {
+    if (key.size() != 7 || key[4] != '-') return key;
+    static const vector<string> months = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+    int month = atoi(key.substr(5, 2).c_str());
+    if (month < 1 || month > 12) return key;
+    return months[month - 1] + " " + key.substr(0, 4);
+}
+
 static bool requireStaff(const httplib::Request& req, httplib::Response& res, Staff& staff) {
     string login = loginFromSession(getAdminSessionToken(req));
     if (login.empty() || !findStaff(login, staff) || staff.status != "active") {
@@ -262,14 +300,6 @@ static string fillAdminShell(string page, const Staff& staff) {
     page = replaceAll(page, "{{residentsNavBadge}}", residentsNavBadge());
     return page;
 }
-
-static void showComingSoon(httplib::Response& res, const Staff& staff, const string& title, const string& note) {
-    string page = fillAdminShell(readFile("../frontend/staff/coming_soon_admin.html"), staff);
-    page = replaceAll(page, "{{pageTitle}}", title);
-    page = replaceAll(page, "{{pageNote}}", note);
-    res.set_content(page, "text/html");
-}
-
 
 static bool moveIntoBackendFolder(const char* programPath) {
     error_code ignored;
@@ -422,7 +452,8 @@ int main(int argc, char** argv) {
             complaintRows += "<div class=\"complaint\"><div><strong>" + escapeHtml(mine[i].category) + " - " +
                               escapeHtml(mine[i].location) + "</strong><p>" + escapeHtml(mine[i].id) + " | " +
                               escapeHtml(mine[i].filedDate) + "</p></div><span class=\"badge " +
-                              statusBadgeClassFor(mine[i].status) + "\">" + escapeHtml(mine[i].status) + "</span></div>";
+                              statusBadgeClassFor(mine[i].status) + "\">" + escapeHtml(mine[i].status) +
+                              "</span><a class=\"view-all\" href=\"/complaint?id=" + escapeHtml(mine[i].id) + "\">View details</a></div>";
         }
         if (complaintRows.empty()) {
             complaintRows = "<p class=\"muted\">You have not filed any complaints yet.</p>";
@@ -526,21 +557,76 @@ int main(int argc, char** argv) {
             res.set_redirect("/signin.html");
             return;
         }
+        string filter = req.has_param("status") ? req.get_param_value("status") : "active";
+        if (filter != "active" && filter != "resolved" && filter != "all") filter = "active";
         string rows = "";
-        for (const Complaint& c : listComplaintsFor(user.login)) {
-            rows += "<div class=\"complaint\"><div><strong>" + escapeHtml(complaintTitle(c)) + "</strong><p>" +
-                    escapeHtml(c.id) + " | " + escapeHtml(c.filedDate) + "</p><p>" + escapeHtml(c.description) +
-                    "</p></div><span class=\"badge " + statusBadgeClassFor(c.status) + "\">" + escapeHtml(c.status) + "</span></div>";
+        vector<Complaint> userComplaints = listComplaintsFor(user.login);
+        int activeCount = 0, resolvedCount = 0;
+        for (const Complaint& c : userComplaints) {
+            if (c.status == "Pending" || c.status == "In progress") ++activeCount;
+            if (c.status == "Resolved") ++resolvedCount;
         }
-        if (rows.empty()) rows = "<p class=\"muted\">You have not filed any complaints yet.</p>";
+        for (const Complaint& c : userComplaints) {
+            if (filter == "active" && (c.status == "Resolved" || c.status == "Rejected")) continue;
+            if (filter == "resolved" && c.status != "Resolved") continue;
+            string categoryIcon = c.category == "Garbage" ? "▤" : c.category == "Noise" ? "◖" : c.category == "Road and lighting" ? "☼" : c.category == "Flooding" ? "≋" : "•••";
+            string categoryStyle = c.category == "Garbage" ? "category-garbage" : c.category == "Noise" ? "category-noise" : c.category == "Road and lighting" ? "category-lighting" : c.category == "Flooding" ? "category-flooding" : "category-other";
+            int steps = c.status == "Resolved" ? 3 : c.status == "In progress" ? 2 : c.status == "Rejected" ? 0 : 1;
+            string progress = c.status == "Rejected" ? "" : "<div class=\"mini-progress\">";
+            for (int i = 0; i < steps; ++i) progress += "<i class=\"done\"></i>";
+            for (int i = steps; i < 3 && c.status != "Rejected"; ++i) progress += "<i></i>";
+            if (c.status != "Rejected") progress += "</div>";
+            rows += "<article class=\"complaint-list-card status-" + statusKeyFor(c.status) + "\"><span class=\"resident-complaint-icon " + categoryStyle + "\" aria-hidden=\"true\">" + categoryIcon +
+                    "</span><div class=\"resident-complaint-copy\"><h2>" + escapeHtml(c.description.empty() ? c.category : c.description) + "</h2><p>" + escapeHtml(c.id) + " | " + escapeHtml(c.category) + " | Filed " + escapeHtml(c.filedDate) +
+                    "</p><p>" + escapeHtml(c.location) + "</p></div><div class=\"resident-complaint-state\"><span class=\"badge " + statusBadgeClassFor(c.status) + "\">" + escapeHtml(c.status) +
+                    "</span>" + progress + "</div><a href=\"/complaint?id=" + escapeHtml(c.id) + "\">View details &rsaquo;</a></article>";
+        }
+        if (rows.empty()) {
+            if (userComplaints.empty()) rows = "<div class=\"resident-empty\"><h2>No complaints yet</h2><p>When you submit a complaint, it will appear here.</p><a class=\"btn btn-yellow\" href=\"/file-complaint\">File a complaint</a></div>";
+            else rows = "<div class=\"resident-empty\"><h2>No complaints in this view</h2><p>Try another status filter to see your reports.</p></div>";
+        }
 
-        string page = readFile("../frontend/resident_list.html");
+        string page = readFile("../frontend/my_complaints.html");
         page = replaceAll(page, "{{initials}}", escapeHtml(initialsOf(user.fullName)));
-        page = replaceAll(page, "{{pageTitle}}", "My complaints");
-        page = replaceAll(page, "{{pageIntro}}", "Everything you have reported, newest first.");
+        page = replaceAll(page, "{{activeTab}}", filter == "active" ? "active" : "");
+        page = replaceAll(page, "{{resolvedTab}}", filter == "resolved" ? "active" : "");
+        page = replaceAll(page, "{{allTab}}", filter == "all" ? "active" : "");
+        page = replaceAll(page, "{{activeCount}}", to_string(activeCount));
+        page = replaceAll(page, "{{resolvedCount}}", to_string(resolvedCount));
+        page = replaceAll(page, "{{allCount}}", to_string((int)userComplaints.size()));
         page = replaceAll(page, "{{listRows}}", rows);
         res.set_content(page, "text/html");
     });
+
+    auto showResidentComplaint = [](const httplib::Request& req, httplib::Response& res, bool receipt) {
+        string login = loginFromSession(getSessionToken(req));
+        User user;
+        if (login.empty() || !findUser(login, user)) { res.set_redirect("/signin.html"); return; }
+        string id = req.has_param("id") ? req.get_param_value("id") : "";
+        Complaint complaint;
+        if (id.empty() || !findComplaint(id, complaint) || complaint.login != user.login) {
+            res.status = 404;
+            res.set_content("<main style=\"font-family:sans-serif;max-width:640px;margin:60px auto;padding:20px\"><h1>Complaint not found</h1><p>This complaint could not be found in your account.</p><a href=\"/my-complaints\">Back to my complaints</a></main>", "text/html");
+            return;
+        }
+        string page = readFile(receipt ? "../frontend/complaint_submitted.html" : "../frontend/complaint_detail.html");
+        page = replaceAll(page, "{{initials}}", escapeHtml(initialsOf(user.fullName)));
+        page = replaceAll(page, "{{complaintId}}", escapeHtml(complaint.id));
+        if (receipt) { res.set_content(page, "text/html"); return; }
+        string statusMessage = complaint.status == "Pending" ? "Your complaint has been received and is waiting for review." :
+            complaint.status == "In progress" ? "The barangay team is working on this complaint." :
+            complaint.status == "Resolved" ? "This complaint has been marked resolved." : "This complaint was marked rejected.";
+        const vector<pair<string, string>> fields = {
+            {"{{complaintTitle}}", escapeHtml(complaintTitle(complaint))}, {"{{statusClass}}", statusBadgeClassFor(complaint.status)},
+            {"{{status}}", escapeHtml(complaint.status)}, {"{{filedDate}}", escapeHtml(complaint.filedDate)},
+            {"{{category}}", escapeHtml(complaint.category)}, {"{{location}}", escapeHtml(complaint.location)},
+            {"{{description}}", escapeHtml(complaint.description)}, {"{{statusMessage}}", statusMessage}
+        };
+        for (const auto& field : fields) page = replaceAll(page, field.first, field.second);
+        res.set_content(page, "text/html");
+    };
+    server.Get("/complaint", [showResidentComplaint](const httplib::Request& req, httplib::Response& res) { showResidentComplaint(req, res, false); });
+    server.Get("/complaint-submitted", [showResidentComplaint](const httplib::Request& req, httplib::Response& res) { showResidentComplaint(req, res, true); });
 
     server.Get("/announcements", [](const httplib::Request& req, httplib::Response& res) {
         string login = loginFromSession(getSessionToken(req));
@@ -551,11 +637,10 @@ int main(int argc, char** argv) {
         }
         string rows = "";
         for (const Announcement& a : listAnnouncements()) {
-            rows += "<div class=\"card\" style=\"margin-bottom:10px\"><h4>" + escapeHtml(a.title) + "</h4><p>" +
-                    escapeHtml(a.category) + " | Posted " + escapeHtml(a.postedDate) + "</p><p style=\"color:inherit\">" +
-                    escapeHtml(a.message) + "</p></div>";
+            rows += "<article class=\"announcement-card\"><div class=\"announcement-accent\"></div><div class=\"announcement-content\"><h2>" + escapeHtml(a.title) + "</h2><span class=\"announcement-category\">" +
+                    escapeHtml(a.category) + "</span><small>Posted " + escapeHtml(a.postedDate) + "</small><p>" + escapeHtml(a.message) + "</p></div></article>";
         }
-        if (rows.empty()) rows = "<p class=\"muted\">No announcements yet.</p>";
+        if (rows.empty()) rows = "<div class=\"resident-empty\"><h2>No announcements yet</h2><p>New barangay updates will appear here.</p></div>";
 
         string page = readFile("../frontend/resident_list.html");
         page = replaceAll(page, "{{initials}}", escapeHtml(initialsOf(user.fullName)));
@@ -648,7 +733,7 @@ int main(int argc, char** argv) {
             showComplaintPage(res, user, "Could not save your complaint. Please try again.");
             return;
         }
-        res.set_redirect("/dashboard#recent-complaints");
+        res.set_redirect("/complaint-submitted?id=" + id);
     });
 
     server.Get("/id-photo", [](const httplib::Request& req, httplib::Response& res) {
@@ -937,10 +1022,113 @@ int main(int argc, char** argv) {
         res.set_content(pdfBytes.str(), "application/pdf");
     });
 
-    server.Get("/admin/reports", [](const httplib::Request& req, httplib::Response& res) {
+    auto filteredReportComplaints = [](const httplib::Request& req) {
+        string month = req.has_param("month") ? req.get_param_value("month") : currentMonthKey();
+        string category = req.has_param("category") ? req.get_param_value("category") : "all";
+        if (month.size() != 7 || month[4] != '-') month = currentMonthKey();
+        if (category != "all" && category != "Garbage" && category != "Noise" && category != "Road and lighting" && category != "Flooding" && category != "Others") category = "all";
+        vector<Complaint> selected;
+        for (const Complaint& c : listAllComplaints()) {
+            if (monthKeyFor(c.filedDate) != month) continue;
+            if (category != "all" && c.category != category) continue;
+            selected.push_back(c);
+        }
+        return selected;
+    };
+    server.Get("/admin/reports", [filteredReportComplaints](const httplib::Request& req, httplib::Response& res) {
         Staff staff;
         if (!requireStaff(req, res, staff)) return;
-        showComingSoon(res, staff, "Reports", "Complaint reports with date and category filters are planned for a later step.");
+        vector<string> categories = {"Garbage", "Noise", "Road and lighting", "Flooding", "Others"};
+        string month = req.has_param("month") ? req.get_param_value("month") : currentMonthKey();
+        if (month.size() != 7 || month[4] != '-') month = currentMonthKey();
+        string category = req.has_param("category") ? req.get_param_value("category") : "all";
+        bool knownCategory = category == "all";
+        for (const string& item : categories) if (category == item) knownCategory = true;
+        if (!knownCategory) category = "all";
+        vector<Complaint> allMonth;
+        for (const Complaint& c : listAllComplaints()) if (monthKeyFor(c.filedDate) == month) allMonth.push_back(c);
+        vector<Complaint> selected = filteredReportComplaints(req);
+        if (req.has_param("category") && category == "all") {
+            selected.clear();
+            for (const Complaint& c : allMonth) selected.push_back(c);
+        }
+        int resolved = 0, open = 0, pending = 0, progress = 0, rejected = 0;
+        for (const Complaint& c : selected) {
+            if (c.status == "Resolved") ++resolved;
+            else if (c.status == "Pending") { ++open; ++pending; }
+            else if (c.status == "In progress") { ++open; ++progress; }
+            else if (c.status == "Rejected") ++rejected;
+        }
+        int count = (int)selected.size();
+        int rate = count ? (resolved * 100 / count) : 0;
+        string monthOptions;
+        set<string> availableMonths;
+        availableMonths.insert(currentMonthKey());
+        for (const Complaint& c : listAllComplaints()) {
+            string key = monthKeyFor(c.filedDate);
+            if (!key.empty()) availableMonths.insert(key);
+        }
+        for (auto it = availableMonths.rbegin(); it != availableMonths.rend(); ++it)
+            monthOptions += "<option value=\"" + escapeHtml(*it) + "\"" + (*it == month ? " selected" : "") + ">" + escapeHtml(monthLabel(*it)) + "</option>";
+        string categoryOptions = "<option value=\"all\"" + string(category == "all" ? " selected" : "") + ">All categories</option>";
+        for (const string& item : categories) categoryOptions += "<option value=\"" + escapeHtml(item) + "\"" + (category == item ? " selected" : "") + ">" + escapeHtml(item) + "</option>";
+        string categoryRows;
+        for (const string& item : categories) {
+            int filed = 0, done = 0, stillOpen = 0;
+            for (const Complaint& c : selected) if (c.category == item) {
+                ++filed;
+                if (c.status == "Resolved") ++done;
+                if (c.status == "Pending" || c.status == "In progress") ++stillOpen;
+            }
+            categoryRows += "<tr><td>" + escapeHtml(item) + "</td><td>" + to_string(filed) + "</td><td>" + to_string(done) + "</td><td>" + to_string(stillOpen) + "</td></tr>";
+        }
+        int denominator = max(count, 1);
+        string statusBars, statusLegend;
+        const vector<pair<string, pair<int, string>>> statuses = {
+            {"Pending", {pending, "status-pending"}}, {"In progress", {progress, "status-progress"}},
+            {"Resolved", {resolved, "status-resolved"}}, {"Rejected", {rejected, "status-rejected"}}
+        };
+        for (const auto& entry : statuses) {
+            int percent = entry.second.first * 100 / denominator;
+            statusBars += "<span class=\"" + entry.second.second + "\" style=\"width:" + to_string(percent) + "%\" title=\"" + escapeHtml(entry.first) + ": " + to_string(entry.second.first) + "\"></span>";
+            statusLegend += "<span><i class=\"" + entry.second.second + "\"></i>" + escapeHtml(entry.first) + " <strong>" + to_string(entry.second.first) + "</strong></span>";
+        }
+        map<string, int> puroks;
+        for (const Complaint& c : selected) {
+            string place = c.location;
+            string lower = toLower(place);
+            size_t p = lower.find("purok");
+            if (p != string::npos) {
+                size_t end = place.find_first_of(",;", p);
+                place = place.substr(p, end == string::npos ? string::npos : end - p);
+            } else place = "Unspecified";
+            ++puroks[place];
+        }
+        string purokBars;
+        int maxPurok = 1;
+        for (const auto& item : puroks) maxPurok = max(maxPurok, item.second);
+        for (const auto& item : puroks) purokBars += "<div class=\"purok-row\"><span class=\"purok-name\">" + escapeHtml(item.first) + "</span><div class=\"purok-track\"><div class=\"purok-fill\" style=\"width:" + to_string(item.second * 100 / maxPurok) + "%\"></div></div><span class=\"purok-count\">" + to_string(item.second) + "</span></div>";
+        if (purokBars.empty()) purokBars = "<p class=\"empty-report\">No complaints for this period.</p>";
+        string page = fillAdminShell(readFile("../frontend/staff/reports_admin.html"), staff);
+        const vector<pair<string, string>> replacements = {
+            {"{{monthOptions}}", monthOptions}, {"{{categoryOptions}}", categoryOptions},
+            {"{{monthValue}}", escapeHtml(month)}, {"{{categoryValue}}", escapeHtml(category)},
+            {"{{filedCount}}", to_string(count)}, {"{{resolvedCount}}", to_string(resolved)},
+            {"{{resolutionRate}}", to_string(rate)}, {"{{openCount}}", to_string(open)},
+            {"{{monthLabel}}", escapeHtml(monthLabel(month))}, {"{{categoryRows}}", categoryRows},
+            {"{{statusBars}}", statusBars}, {"{{statusLegend}}", statusLegend}, {"{{purokBars}}", purokBars}
+        };
+        for (const auto& replacement : replacements) page = replaceAll(page, replacement.first, replacement.second);
+        res.set_content(page, "text/html");
+    });
+    server.Get("/admin/reports/export.csv", [filteredReportComplaints](const httplib::Request& req, httplib::Response& res) {
+        Staff staff;
+        if (!requireStaff(req, res, staff)) return;
+        string csv = "ID,Category,Location,Description,Status,Filed date\n";
+        for (const Complaint& c : filteredReportComplaints(req))
+            csv += csvCell(c.id) + "," + csvCell(c.category) + "," + csvCell(c.location) + "," + csvCell(c.description) + "," + csvCell(c.status) + "," + csvCell(c.filedDate) + "\n";
+        res.set_header("Content-Disposition", "attachment; filename=agap-complaint-report.csv");
+        res.set_content(csv, "text/csv; charset=utf-8");
     });
     auto requireAdminRole = [&](const httplib::Request& req, httplib::Response& res, Staff& staffOut) -> bool {
         string login = loginFromSession(getAdminSessionToken(req));

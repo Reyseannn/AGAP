@@ -306,13 +306,14 @@ a{text-decoration:none;
 </a>
 <nav class="complaint-nav" aria-label="Main navigation">
     <a href="/dashboard">Home</a>
-    <a href="/dashboard#recent-complaints">My Complaints</a>
-    <a class="account-icon" href="/verify" aria-label="Account verification">●</a>
+    <a href="/my-complaints">My Complaints</a>
+    <a class="account-icon" href="/dashboard" aria-label="Account">{{initials}}</a>
     <a href="/signout">Sign out</a></nav>
 </div>
 </header>
 <main class="complaint-container complaint-main">
 {{errorBanner}}
+<div class="emergency-notice"><strong>For emergencies</strong><span>AGAP is not an emergency service. Call 911 or your barangay hotline for immediate help.</span></div>
 <div class="complaint-title">
     <h1>FILE A COMPLAINT</h1>
     <a href="/dashboard">‹ Back to home</a>
@@ -321,7 +322,7 @@ a{text-decoration:none;
 <section class="report-card" aria-labelledby="report-title">
 <div class="report-heading"><h2 id="report-title">Report a problem</h2></div>
 <div class="report-content">
-<div class="reporting-as"><span class="report-avatar" aria-hidden="true">●</span>
+<div class="reporting-as"><span class="report-avatar" aria-hidden="true">{{initials}}</span>
     <div class="report-user"><small>Reporting as</small>
         <p>{{fullname}} &middot; {{phone}}</p>
     </div>
@@ -354,6 +355,6 @@ a{text-decoration:none;
 </div></section>
 </form>
 </main>
-<footer class="complaint-footer"><div class="complaint-container complaint-footer-inner"><p>Barangay contact details will appear here.</p><span class="footer-help">Help | Privacy</span></div></footer>
+<footer class="complaint-footer"><div class="complaint-container complaint-footer-inner"><p>Barangay Hall, Payatas, Quezon City | Hotline 112</p><a class="footer-help" href="/privacy.html">Help | Privacy</a></div></footer>
 </body>
 </html>

@@ -245,3 +245,59 @@ body.state-verified [data-show~="verified"] { display: revert; }
   .verify-card { padding: 22px 18px; }
   .auth-side { padding: 70px 20px 28px; }
 }
+.resident-page { padding-top:28px; padding-bottom:56px; }
+.resident-page > p:first-child { margin-bottom:18px; font-size:13px; color:var(--blue); font-weight:600; }
+.resident-page-head { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:22px; }
+.resident-page-head h1 { font-size:28px; }.resident-page-head p { font-size:14px; }
+.resident-tabs { display:flex; gap:22px; border-bottom:1px solid var(--border); margin-bottom:18px; }
+.resident-tabs a { padding:10px 2px; color:var(--text-muted); font-size:13px; font-weight:600; border-bottom:3px solid transparent; }
+.resident-tabs a.active { color:var(--blue); border-bottom-color:var(--yellow); }
+.complaint-list-card { background:#fff; border:1px solid var(--border); border-radius:10px; padding:16px 18px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; gap:14px; }
+.complaint-list-card h2 { font-size:15px; margin-bottom:4px; }.complaint-list-card p { color:var(--text-muted); font-size:12px; }
+.complaint-list-card .badge { margin:0; flex-shrink:0; }.complaint-list-card a { color:var(--blue); font-size:12px; font-weight:600; }
+.resident-empty { text-align:center; padding:38px 20px; background:var(--gray-bg); border-radius:10px; }.resident-empty h2 { font-size:17px; margin-bottom:6px; }.resident-empty p { color:var(--text-muted); font-size:13px; margin-bottom:15px; }
+.detail-card { max-width:780px; margin:0 auto; background:#fff; border:1px solid var(--border); border-radius:12px; padding:26px; }
+.detail-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; border-bottom:1px solid var(--border); padding-bottom:18px; }.detail-head h1 { font-size:23px; }.detail-head .badge { margin:5px 0 0; }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px 28px; padding:22px 0; }.detail-grid .wide { grid-column:1/-1; }.detail-grid dt { color:var(--text-muted); font-size:12px; font-weight:600; margin-bottom:4px; }.detail-grid dd { font-size:14px; }.detail-description { white-space:pre-wrap; }
+.status-note { background:#eaf2fd; border:1px solid #c9dcf7; border-radius:8px; padding:14px 16px; font-size:13px; }.status-note p { color:var(--text-muted); margin-top:4px; }
+.receipt-wrap { min-height:calc(100vh - 69px); display:grid; place-items:center; padding-top:32px; padding-bottom:48px; }.receipt-card { max-width:500px; width:100%; text-align:center; padding:38px; background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:0 8px 28px rgba(18,40,90,.08); }.receipt-check { width:54px; height:54px; margin:0 auto 18px; display:grid; place-items:center; border-radius:50%; background:#dff3e8; color:#1c7a4a; font-size:28px; font-weight:700; }.receipt-card h1 { font-size:25px; margin-bottom:8px; }.receipt-card > .muted { font-size:13px; }.receipt-number { margin:22px 0; background:var(--gray-bg); border-radius:8px; padding:12px; display:flex; justify-content:space-between; font-size:13px; }.receipt-number span { color:var(--text-muted); }.receipt-secondary { display:block; margin-top:14px; color:var(--blue); font-size:13px; font-weight:600; }
+@media(max-width:520px) { .detail-card,.receipt-card { padding:22px 18px; }.detail-grid { grid-template-columns:1fr; }.detail-grid .wide { grid-column:auto; }.complaint-list-card { align-items:flex-start; flex-wrap:wrap; } }
+
+.hero-report-card { position:relative; flex-shrink:0; }
+.hero-report-card .report-card-meta { display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); }
+.hero-report-card h3 { margin:7px 0 20px; font-size:16px; }
+.hero-report-card .reported-as { font-size:11px; }
+.hero-report-card .reported-as p { color:var(--navy); }
+.hero-report-card .reported-as span { color:var(--text-muted); }
+.hero-report-card .progress { position:relative; }
+.steps-row { position:relative; }
+.steps-row .number { margin-bottom:8px; }
+
+/* Resident screens share the reference's gold top rule, account nav, and footer strip. */
+.nav-links a.current { color:var(--blue); font-weight:600; }
+.resident-footer { min-height:52px; display:flex; align-items:center; background:#e8edf3; color:#4d5968; font-size:12px; }
+.resident-footer .container { width:100%; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; padding-top:12px; padding-bottom:12px; }
+.resident-footer a { color:var(--blue); font-weight:600; white-space:nowrap; }
+.resident-dashboard { min-height:calc(100vh - 121px); }
+.complaints-page,.announcements-page,.complaint-details-page,.privacy-page { min-height:calc(100vh - 121px); }
+.list-title-row,.detail-title-row,.privacy-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--border); padding:8px 0 14px; margin:0 0 24px; }
+.list-title-row h1,.detail-title-row h1,.privacy-heading h1 { font-size:24px; text-transform:uppercase; }
+.detail-title-row a,.privacy-heading > a { color:var(--blue); font-size:13px; font-weight:600; }
+.resident-tabs { gap:20px; margin-bottom:22px; }
+.resident-tabs a { padding:10px 0; }
+.complaint-list-card { display:grid; grid-template-columns:48px minmax(0,1fr) 128px 116px; align-items:center; gap:16px; min-height:100px; padding:16px 20px; border-radius:9px; }
+.resident-complaint-icon { width:42px; height:42px; display:grid; place-items:center; border-radius:50%; font-size:19px; font-weight:700; }
+.category-garbage { background:#dceaff; color:#1a56b0; }.category-noise { background:#fff0cb; color:#996100; }.category-lighting { background:#dcf1e6; color:#167345; }.category-flooding { background:#def2ff; color:#1680bc; }.category-other { background:#f0e5ff; color:#7953b6; }
+.resident-complaint-copy { min-width:0; }.resident-complaint-copy h2 { overflow-wrap:anywhere; }.resident-complaint-copy p + p { margin-top:2px; }
+.resident-complaint-state { text-align:center; }.resident-complaint-state .badge { min-width:106px; border:1px solid currentColor; background:transparent; margin:0 0 9px; padding:4px 10px; }
+.mini-progress { display:flex; gap:5px; justify-content:center; }.mini-progress i { display:block; width:31px; height:5px; border-radius:5px; background:#e3e7ee; }.mini-progress i.done { background:var(--blue); }.complaint-list-card.status-resolved .mini-progress i.done { background:#1c7a4a; }.complaint-list-card.status-pending .mini-progress i.done { background:#e0b51c; }
+.complaint-list-card > a { color:var(--blue); font-size:13px; font-weight:600; white-space:nowrap; }
+.announcement-list { max-width:880px; margin:0 auto; }.announcement-card { display:grid; grid-template-columns:5px minmax(0,1fr); overflow:hidden; margin-bottom:14px; border:1px solid var(--border); border-radius:9px; background:#fff; }.announcement-accent { background:var(--yellow); }.announcement-content { padding:18px 20px; }.announcement-content h2 { font-size:16px; margin-bottom:8px; }.announcement-content small { display:inline-block; color:var(--text-muted); font-size:11px; margin-left:10px; }.announcement-category { display:inline-block; padding:3px 10px; border-radius:999px; background:#fdf1cc; color:#8a6a00; font-size:11px; font-weight:600; }.announcement-content p { margin-top:10px; color:#4d5968; font-size:13px; white-space:pre-wrap; }
+.resident-detail-layout { display:grid; grid-template-columns:minmax(0,2fr) minmax(260px,1fr); gap:18px; align-items:stretch; }.resident-detail-card,.resident-status-card,.privacy-card { background:#fff; border:1px solid var(--border); border-radius:9px; overflow:hidden; }.resident-detail-card > header,.resident-status-card > header { background:var(--gray-bg); border-bottom:1px solid var(--border); padding:14px 18px; }.resident-detail-card h2,.resident-status-card h2 { font-size:17px; }.resident-detail-body { padding:22px; }.resident-detail-status { display:flex; gap:14px; align-items:center; padding-bottom:18px; border-bottom:1px solid var(--border); }.resident-detail-status .badge { margin:0; }.resident-detail-status p { font-size:13px; color:var(--text-muted); }.resident-detail-body .detail-grid { padding-bottom:0; }.resident-status-card { min-height:260px; }.status-update-item { display:flex; gap:14px; padding:22px 18px; }.status-update-dot { width:12px; height:12px; margin-top:5px; background:var(--blue); border:3px solid #dce9fb; border-radius:50%; flex-shrink:0; }.status-update-item strong { font-size:13px; }.status-update-item p,.status-update-item small { display:block; color:var(--text-muted); font-size:12px; margin-top:5px; }
+.receipt-next { text-align:left; margin:22px 0; padding:16px; border:1px solid var(--border); border-radius:8px; background:#f8f9fb; }.receipt-next h2 { font-size:14px; margin-bottom:8px; }.receipt-next ul { padding-left:18px; color:var(--text-muted); font-size:12px; }.receipt-next li + li { margin-top:5px; }
+.privacy-page { padding-top:30px; padding-bottom:48px; }.privacy-heading { align-items:flex-end; }.privacy-heading .eyebrow { margin-bottom:4px; }.privacy-card { max-width:900px; margin:0 auto; padding:24px 28px; }.privacy-card h2 { font-size:18px; margin-bottom:8px; }.privacy-card h3 { margin-top:20px; margin-bottom:5px; font-size:14px; }.privacy-card p { color:#4d5968; font-size:13px; }
+.emergency-notice { display:flex; align-items:center; gap:12px; margin-bottom:16px; padding:11px 14px; border:1px solid #efd984; border-radius:7px; background:#fff8df; color:#6d5710; font-size:12px; }.emergency-notice strong { white-space:nowrap; }
+.hero-note { margin-top:10px; }.progress { align-items:flex-start; }.hero-report-card .progress { margin-bottom:17px; }.hero-report-card .step { min-width:66px; }.hero-report-card .step span:last-child { white-space:nowrap; font-size:10px; }
+@media(max-width:720px) { .resident-footer .container { padding-left:20px; padding-right:20px; }.complaint-list-card { grid-template-columns:42px minmax(0,1fr) auto; gap:10px; }.resident-complaint-state { grid-column:2; text-align:left; }.mini-progress { justify-content:flex-start; }.complaint-list-card > a { grid-column:3; grid-row:1 / span 2; white-space:normal; text-align:right; }.resident-detail-layout { grid-template-columns:1fr; }.privacy-card { padding:20px; } }
+@media(max-width:520px) { .list-title-row h1,.detail-title-row h1,.privacy-heading h1 { font-size:20px; }.list-title-row { align-items:flex-start; }.list-title-row .btn { padding:8px 12px; font-size:12px; }.complaint-list-card { padding:13px; }.resident-complaint-icon { width:36px; height:36px; }.resident-complaint-copy h2 { font-size:13px; }.complaint-list-card > a { font-size:11px; }.emergency-notice { align-items:flex-start; flex-direction:column; gap:3px; }.hero-card { width:100%; } }
+.auth-privacy { text-align:center; margin-top:16px; color:var(--text-muted); font-size:11px; }.auth-privacy a { color:var(--blue); font-weight:600; }

@@ -17,8 +17,8 @@
 
     <form class="verify-card" method="post" action="/verify" enctype="multipart/form-data">
         <p class="eyebrow">VERIFY AN ACCOUNT</p>
-        <h2>Verify a resident</h2>
-        <p class="muted">Give us the contact details and a valid ID so staff can confirm a resident lives in this barangay.</p>
+        <h2>Verify your account</h2>
+        <p class="muted">Submit your contact details and a valid ID so staff can confirm that you live in this barangay.</p>
         <!--PENDING_NOTICE-->
         <!--ERROR-->
         <p class="step-label">Step 2 of 2</p>
@@ -45,15 +45,15 @@
         </div>
 
         <div class="field">
-        <label for="idphoto">Photo of the stored ID</label>
+        <label for="idphoto">Photo of your ID</label>
         <ul class="upload-tips">
             <li>Use a well-lit, in-focus photo — no blur or glare on the text.</li>
             <li>Show the whole ID: all four corners inside the frame.</li>
-            <li>residents' name and address on the ID must be readable.</li>
+            <li>Your name and address on the ID must be readable.</li>
         </ul>
         <label class="upload" id="uploadBox">
             <input type="file" id="idphoto" name="idphoto" accept="image/jpeg,image/png" required>
-            <span id="uploadText">Tap to upload a clear photo of the front of the stored ID</span>
+            <span id="uploadText">Tap to upload a clear photo of the front of your ID</span>
             <small>JPG or PNG, up to 5 MB.</small>
         </label>
         </div>
@@ -62,7 +62,7 @@
         <a href="/dashboard" class="link-center">I will do this later</a>
     </form>
 
-    <p class="verify-foot">Help | Privacy</p>
+    <p class="verify-foot"><a href="/privacy.html">Privacy</a></p>
 
     <script src="js/verify.js"></script>
     </body>

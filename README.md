@@ -69,7 +69,11 @@ AGAP/
     ├── dashboard.html                 Resident dashboard (4 states, see section 6)
     ├── verify.html                    Resident ID verification form
     ├── filecomplaint.html             File-a-complaint form (verified residents only)
-    ├── resident_list.html             One template used by /my-complaints and /announcements
+    ├── resident_list.html             Announcements list
+    ├── my_complaints.html             Resident complaints with Active/Resolved/All filters
+    ├── complaint_detail.html          Resident-owned complaint details and current status
+    ├── complaint_submitted.html       Submission receipt with reference number
+    ├── privacy.html                    Privacy notice shown by resident-page footer links
     ├── css/style.css                  Shared stylesheet for the whole site
     ├── js/auth.js                     Show/hide password checkbox
     ├── js/verify.js                   Shows the chosen file's name on the upload box
@@ -82,7 +86,7 @@ AGAP/
         ├── resident_review_admin.html     Approve/Reject (reason required to reject)
         ├── announcements_admin.html
         ├── settings_admin.html             Administrator-only staff and list settings
-        ├── coming_soon_admin.html         placeholder for unfinished Reports
+        ├── reports_admin.html             Monthly/category complaint metrics and charts
         ├── css/admin.css                  built ON TOP OF ../css/style.css
         ├── js/complaints.js               client-side tabs/search/filter for the table
         └── js/residents.js                client-side status-tab filter
@@ -225,7 +229,9 @@ HTML with no JavaScript.
     Others are sent to `/verify`. Saves category, location, description and an optional JPG/PNG
     photo (max 5 MB, in `data/complaint_photos/`). Residents see their own complaints on the
     dashboard and at `/my-complaints`.
-13. Settings — administrator-only staff account and teams/puroks management is available at `/admin/settings`. Reports remains a placeholder.
+13. Reports — `/admin/reports` summarizes saved complaints by month and category, shows resolution/open counts with status and purok charts, and downloads a filtered CSV. Purok is read from the location residents entered; complaints without a Purok label appear as Unspecified.
+14. Resident complaint tracking — `/my-complaints` has Active, Resolved, and All filters. Residents can open their own complaint details and see its current status; `/complaint-submitted` shows the receipt after filing. Complaint status history is not stored, so detail pages do not invent a timeline.
+15. Settings — administrator-only staff account and teams/puroks management is available at `/admin/settings`.
 
 ### Login architecture (important — changed partway through)
 10. Originally residents and staff had **two completely separate login
@@ -397,12 +403,11 @@ zeros and "No complaints have been filed yet" until residents file some.
 ## 10. Known issues, unfinished work, and suggested next steps
 
 **Not built yet:**
-- Reports page (date/category filters, resolution stats, export). Sidebar link shows "Coming soon".
 - Settings: administrators can add staff accounts, reset passwords, activate/deactivate staff, and manage response-team and purok name lists. Deactivation and list removal require confirmation. Teams and puroks are stored for future use but are not yet connected to complaint assignment or resident address fields. Categories and barangay info tabs remain placeholders.
 - Editing an existing announcement (only post + delete exist).
 - Assigning complaints to staff/teams, and notes/comments on a complaint.
-- Residents can't open a single complaint (only a list); no notification when status changes
-  beyond what they see next time they open their dashboard (no email, by design).
+- No notification when complaint status changes beyond what residents see next time they open
+  their dashboard or complaint details (no email, by design).
 
 **Smaller loose ends:**
 - No password-reset flow for residents (removed early on, by the project owner's choice).
@@ -421,7 +426,7 @@ zeros and "No complaints have been filed yet" until residents file some.
   early `Data/users.txt`.
 
 **If you're picking this up fresh:** ask the project owner which step they want next —
-likely the Reports page, category/barangay settings, or connecting teams and puroks to complaints and resident addresses.
+likely category/barangay settings, or connecting teams and puroks to complaints and resident addresses.
 
 ---
 

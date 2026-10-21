@@ -3,7 +3,7 @@
     <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{pageTitle}} – AGAP Admin</title>
+    <title>Reports – AGAP Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
@@ -35,7 +35,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10v4h3l5 4V6L7 10H4z"/><path d="M16 9a3 3 0 0 1 0 6"/></svg>
             Announcements
         </a>
-        <a href="/admin/reports">
+        <a href="/admin/reports" class="active">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 20V10M12 20V4M19 20v-7"/></svg>
             Reports
         </a>
@@ -56,15 +56,41 @@
     <div class="admin-main">
         <header class="admin-topbar">
         <div>
-            <h1>{{pageTitle}}</h1>
-            <p class="muted">Not built yet</p>
+            <h1>Reports</h1>
+            <p class="muted">Summary of complaints for the barangay</p>
         </div>
+        <div class="admin-topbar-actions"><a href="/admin/signout" class="btn btn-outline">Sign out</a></div>
         </header>
         <main class="admin-content">
-        <div class="admin-panel">
-            <h3>Coming soon</h3>
-            <p class="muted">{{pageNote}}</p>
-        </div>
+          <form class="reports-toolbar" method="get" action="/admin/reports">
+            <label>Month <select name="month">{{monthOptions}}</select></label>
+            <label>Category <select name="category">{{categoryOptions}}</select></label>
+            <button class="btn btn-yellow" type="submit">Apply filters</button>
+            <a class="btn btn-yellow" href="/admin/reports/export.csv?month={{monthValue}}&amp;category={{categoryValue}}">Download report</a>
+          </form>
+          <div class="summary-cards report-metrics">
+            <div class="summary-card"><div class="num">{{filedCount}}</div><div class="label">Filed this month</div></div>
+            <div class="summary-card"><div class="num">{{resolvedCount}}</div><div class="label">Resolved</div></div>
+            <div class="summary-card"><div class="num">{{resolutionRate}}%</div><div class="label">Resolution rate</div></div>
+            <div class="summary-card"><div class="num">{{openCount}}</div><div class="label">Still open</div></div>
+          </div>
+          <div class="admin-grid report-grid">
+            <section class="admin-panel">
+              <div class="admin-panel-head"><h3>Complaints by category</h3><span class="sample-tag">{{monthLabel}}</span></div>
+              <div class="report-table-wrap"><table class="admin-table"><thead><tr><th>Category</th><th>Filed</th><th>Resolved</th><th>Still open</th></tr></thead><tbody>{{categoryRows}}</tbody><tfoot><tr><th>Total</th><th>{{filedCount}}</th><th>{{resolvedCount}}</th><th>{{openCount}}</th></tr></tfoot></table></div>
+            </section>
+            <div>
+              <section class="admin-panel">
+                <div class="admin-panel-head"><h3>By status</h3></div>
+                <div class="status-chart">{{statusBars}}</div>
+                <div class="report-legend">{{statusLegend}}</div>
+              </section>
+              <section class="admin-panel">
+                <div class="admin-panel-head"><h3>By purok</h3></div>
+                <div class="purok-chart">{{purokBars}}</div>
+              </section>
+            </div>
+          </div>
         </main>
     </div>
     </div>
