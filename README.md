@@ -103,7 +103,7 @@ copy of the server, compiles, and runs.
 **Compile by hand** (run from inside the `backend` folder — this matters, see section 9):
 
 ```
-g++ main.cpp storage.cpp auth.cpp staff_storage.cpp pdf_report.cpp announcement_storage.cpp complaint_storage.cpp file_util.cpp -o agap.exe -std=c++17 -lws2_32
+g++ main.cpp storage.cpp auth.cpp staff_storage.cpp pdf_report.cpp announcement_storage.cpp complaint_storage.cpp file_util.cpp named_list_storage.cpp -o agap.exe -std=c++17 -lws2_32
 ```
 
 (On Linux/macOS, drop `-lws2_32`, add `-pthread`, and name the output `agap`.)
@@ -133,20 +133,22 @@ Change it after sign-in in Settings → Staff accounts by resetting your own pas
 page if you're not signed in as staff)
 
 **Basic manual test checklist:**
-1. Sign up a resident on the public site → lands on the dashboard, "new account" state.
-2. Submit the Verify form with phone, address, and a real JPG/PNG → status becomes "pending".
-3. Sign in at `/signin.html` with the staff admin account → lands on `/admin/dashboard`.
-   Open Residents, review the resident, and Approve → their dashboard becomes "verified".
-4. As the resident, click "File a complaint", fill in the form (photo optional) → it appears
-   under "My recent complaints" on the dashboard and at `/my-complaints`.
+1. Sign up a resident → the dashboard says verification has not been submitted. The user cannot
+   file a complaint from the dashboard or by opening `/file-complaint` directly.
+2. Submit phone, address, and a JPG/PNG ID photo → the server saves the resident as `pending`.
+   The pending banner explains that admin review is required; both complaint GET and POST are
+   blocked while the account is pending.
+3. Sign in as staff, open Residents, review the resident, and Approve → the saved status becomes
+   `verified`. Rejected requests stay blocked; uploading again sends them back to `pending`.
+4. Sign in as the approved resident → the dashboard shows approval, offers complaint filing,
+   and does not show a verification prompt. Submit a complaint; it appears in My Complaints.
 5. As staff, open Complaints → the complaint is listed. View it, change its status, and open
    "View / Download PDF report".
 6. Post an announcement under Announcements → it shows on the resident dashboard.
 7. Sign out, visit `/admin` directly → should bounce to `/signin.html`.
-8. As a verified resident, the three banners at the top of the dashboard (pending / rejected /
-   "Account created") must be hidden; for an unverified, pending or rejected resident only the
-   matching banner shows. Sign out and in again — the state stays the same (it is read from
-   `data/users.txt` on every dashboard request).
+8. Check all four dashboard states: not submitted, pending review, approved, and rejected.
+   Each banner and badge must match the saved status. The status is loaded from `data/users.txt`
+   on every request; complaint access is authorized by the server from that same saved status.
 
 ---
 
@@ -174,12 +176,15 @@ HTML with no JavaScript.
    to a cookie named `session`. **Sessions reset when the server restarts** —
    that's expected, not a bug.
 3. Resident dashboard (`dashboard.html`) — ONE file with FOUR states (new /
-   pending / rejected / verified) controlled by a `data-show="..."` attribute
-   system — see section 8's bug writeup for why it's built this way.
+   pending / rejected / verified). The server reads the resident record and sets the state;
+   `data-show="..."` controls which matching UI elements are visible. New accounts are not
+   labeled verified, and only approved users see complaint links.
 4. ID verification (`verify.html`) — collects phone, address (both required),
    and an ID photo (JPG/PNG, max 5 MB). Saves the photo to `data/ids/<login>.jpg`
-   (or `.png`), and updates the resident's status to `pending`. The form
-   pre-fills the resident's existing phone/address so they don't retype them.
+   (or `.png`), and sets the status to `pending`; submitting documents is not approval.
+   Only an admin decision changes the status to `verified` or `rejected`. Approved residents
+   are redirected away from the verification form so they cannot accidentally lose approval.
+   The form pre-fills the resident's existing phone/address so they don't retype them.
 5. `/id-photo` route — serves back only the logged-in resident's own ID photo.
    No one can view another resident's photo by changing a URL parameter —
    there isn't one; it's derived entirely from the session.
@@ -214,10 +219,12 @@ HTML with no JavaScript.
     shows the real newest 4. **Editing an existing announcement was not
     built** (only post + delete); the Figma shows an "Edit" link that has no
     working route behind it yet. Residents can read the full list at `/announcements`.
-12. File a complaint (resident side) — `/file-complaint`. Only residents whose ID was approved
-    can file; others are sent to `/verify`. Saves category, location, description and an
-    optional JPG/PNG photo (max 5 MB, in `data/complaint_photos/`). Residents see their own
-    complaints on the dashboard and at `/my-complaints`.
+12. File a complaint (resident side) — `/file-complaint`. Only residents whose saved status is
+    `verified` can file. The server checks the logged-in resident's record on both the form GET
+    and submission POST; changing browser HTML or a stale dashboard cannot grant access.
+    Others are sent to `/verify`. Saves category, location, description and an optional JPG/PNG
+    photo (max 5 MB, in `data/complaint_photos/`). Residents see their own complaints on the
+    dashboard and at `/my-complaints`.
 13. Settings — administrator-only staff account and teams/puroks management is available at `/admin/settings`. Reports remains a placeholder.
 
 ### Login architecture (important — changed partway through)
@@ -400,7 +407,7 @@ zeros and "No complaints have been filed yet" until residents file some.
 **Smaller loose ends:**
 - No password-reset flow for residents (removed early on, by the project owner's choice).
 - Settings does not yet edit complaint categories or barangay contact information.
-- The starter admin password is `admin123` on a fresh data folder; reset it in Settings after first sign-in.
+- A starter administrator account is created on a fresh data folder. Sign in and change its password in Settings before using the system.
 - Complaint IDs are `AGAP-` + (number of complaints + 1). Complaints are never deleted, so IDs
   stay unique; if deleting is ever added, switch to a counter.
 - `data/users.txt` is 9 columns: `login, fullName, phone, address, salt, passwordHash,
@@ -447,7 +454,7 @@ Fix: `file_util.cpp` (`appendLine`, `cleanLine`) is used by every storage file; 
 
 ---
 
-## 13. Bugs: wrong login cookie, banners always visible, admin sign-out page — fixed
+## 13. Bugs: wrong login cookie, verification flow, banners, admin sign-out — fixed
 
 - **Cookie mix-up.** `getCookie("session")` also matched inside `admin_session=...`, so a browser
   holding both cookies sent the staff token as the resident session. `getCookie()` now splits on
@@ -457,6 +464,12 @@ Fix: `file_util.cpp` (`appendLine`, `cleanLine`) is used by every storage file; 
   The rules are now `body [data-show]` (hidden) and `body.state-... [data-show~="..."]` (shown).
   The state class comes from the stored `verification` value via `stateClassFor()` in `main.cpp`
   (`unverified` → new, `pending`, `rejected`, `verified`; anything unknown falls back to new).
+- **Verification flow and dashboard state.** New accounts previously displayed a verified badge
+  and a complaint link. The dashboard now labels each status correctly and displays a matching
+  not-submitted, pending-review, approved, or rejected banner. Complaint access is checked on the
+  server for both GET and POST using the saved user record. Verification uploads set `pending`;
+  only the admin approval route sets `verified`. Approved residents cannot reopen or submit the
+  verification form and accidentally demote themselves.
 - **Admin sign-out.** `/admin/signout` clears the `admin_session` cookie, deletes the token on the
   server, and redirects to `/signin.html` (the shared sign-in page). Resident `/signout` still
   goes to `/`. After sign-out, `/admin/...` pages redirect to `/signin.html` and an old
