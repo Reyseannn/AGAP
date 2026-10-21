@@ -403,7 +403,7 @@ zeros and "No complaints have been filed yet" until residents file some.
 ## 10. Known issues, unfinished work, and suggested next steps
 
 **Not built yet:**
-- Settings: administrators can add staff accounts, reset passwords, activate/deactivate staff, and manage response-team and purok name lists. Deactivation and list removal require confirmation. Teams and puroks are stored for future use but are not yet connected to complaint assignment or resident address fields. Categories and barangay info tabs remain placeholders.
+- Settings: administrators can add staff accounts, reset passwords, activate/deactivate staff, and manage response-team and purok name lists. Deactivation and list removal require confirmation. Teams and puroks are stored for future use but are not yet connected to complaint assignment or resident address fields. Settings navigation contains the staff and teams/puroks screens shown in the reference.
 - Editing an existing announcement (only post + delete exist).
 - Assigning complaints to staff/teams, and notes/comments on a complaint.
 - No notification when complaint status changes beyond what residents see next time they open
@@ -411,7 +411,7 @@ zeros and "No complaints have been filed yet" until residents file some.
 
 **Smaller loose ends:**
 - No password-reset flow for residents (removed early on, by the project owner's choice).
-- Settings does not yet edit complaint categories or barangay contact information.
+- Complaint categories remain fixed in the complaint workflow; category and barangay contact editing are not part of the Settings UI.
 - A starter administrator account is created on a fresh data folder. Sign in and change its password in Settings before using the system.
 - Complaint IDs are `AGAP-` + (number of complaints + 1). Complaints are never deleted, so IDs
   stay unique; if deleting is ever added, switch to a counter.
@@ -426,7 +426,7 @@ zeros and "No complaints have been filed yet" until residents file some.
   early `Data/users.txt`.
 
 **If you're picking this up fresh:** ask the project owner which step they want next —
-likely category/barangay settings, or connecting teams and puroks to complaints and resident addresses.
+likely connecting teams and puroks to complaints and resident addresses.
 
 ---
 

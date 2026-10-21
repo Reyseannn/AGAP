@@ -1152,7 +1152,7 @@ int main(int argc, char** argv) {
         if (!requireAdminRole(req, res, staff)) return;
 
         string tab = req.get_param_value("tab");
-        if (tab.empty()) tab = "staff";
+        if (tab != "teams") tab = "staff";
 
         string tabContent;
 
@@ -1249,13 +1249,6 @@ int main(int argc, char** argv) {
                 "<p class=\"sample-tag\" style=\"display:block;margin-top:14px\">These lists are stored for "
                 "future use. They aren't connected to the complaint \"Assign to\" field or address fields yet.</p>";
 
-        } else {
-            string label = (tab == "categories") ? "Categories" : "Barangay info";
-            tabContent = "<div class=\"admin-panel\"><h3>" + label + "</h3>"
-                         "<p class=\"muted\">This tab wasn't built in this session. Complaint categories "
-                         "are currently fixed in the code (Garbage, Noise, Road and lighting, Flooding, Others) "
-                         "rather than editable here, and the barangay's contact details are hardcoded in the "
-                         "footer of each page rather than stored and editable.</p></div>";
         }
 
         VerificationCounts counts = countResidentsByVerification();
@@ -1269,8 +1262,6 @@ int main(int argc, char** argv) {
         page = replaceAll(page, "{{residentsNavBadge}}", navBadge);
         page = replaceAll(page, "{{tabStaffActive}}", tab == "staff" ? "active" : "");
         page = replaceAll(page, "{{tabTeamsActive}}", tab == "teams" ? "active" : "");
-        page = replaceAll(page, "{{tabCategoriesActive}}", tab == "categories" ? "active" : "");
-        page = replaceAll(page, "{{tabInfoActive}}", tab == "info" ? "active" : "");
         page = replaceAll(page, "{{tabContent}}", tabContent);
         res.set_content(page, "text/html");
     });
