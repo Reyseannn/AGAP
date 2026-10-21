@@ -29,12 +29,7 @@
 
   <main class="container">
 
-    <div class="banner banner-warn" data-show="pending">Verification pending. Staff are checking your ID. You can file complaints once it is approved.</div>
-    <div class="banner banner-error" data-show="rejected">
-      <span>Verification not approved: {{rejectionReason}}</span>
-      <a href="/verify">Upload ID again</a>
-    </div>
-    <div class="banner banner-success" data-show="new">Account created. Welcome to AGAP!</div>
+    {{verificationBanner}}
 
     <div class="dash">
 
@@ -44,8 +39,9 @@
         <p class="muted">How may we help you?</p>
 
         <div class="actions">
-          <a href="/file-complaint" class="btn btn-yellow" data-show="new verified">File a complaint</a>
+          <a href="/file-complaint" class="btn btn-yellow" data-show="verified">File a complaint</a>
           <a href="/my-complaints" class="btn btn-outline" data-show="verified">Track my complaints</a>
+          <a href="/verify" class="btn btn-yellow" data-show="new">Verify your account</a>
           <span class="btn btn-disabled" data-show="pending">File a complaint</span>
           <span class="hint" data-show="pending">Available after verification</span>
           <span class="btn btn-disabled" data-show="rejected">File a complaint</span>
@@ -68,7 +64,7 @@
         <div class="empty" data-show="new">
           <h4>No complaints yet</h4>
           <p class="muted">Your reports and their status will show up here.</p>
-          <a href="/file-complaint" class="btn btn-yellow">File your first complaint</a>
+          <a href="/verify" class="btn btn-yellow">Verify your account</a>
         </div>
       </section>
 
@@ -78,7 +74,8 @@
             <span class="avatar">{{initials}}</span>
             <div>
               <strong>{{fullname}}</strong><br>
-              <span class="badge badge-resolved" data-show="new verified">&#10003; Verified resident</span>
+              <span class="badge badge-rejected" data-show="new">Verification not submitted</span>
+              <span class="badge badge-resolved" data-show="verified">&#10003; Verified resident</span>
               <span class="badge badge-pending" data-show="pending">Pending verification</span>
               <span class="badge badge-rejected" data-show="rejected">Not verified</span>
             </div>
@@ -88,7 +85,7 @@
 
           <p class="side-note">
             <span>Phone and address fill in your reports</span>
-            <a href="/verify" data-show="new pending verified">Edit</a>
+            <a href="/verify" data-show="new pending">Edit</a>
             <a href="/verify" data-show="rejected">Upload again</a>
           </p>
 
